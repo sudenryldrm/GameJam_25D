@@ -1,18 +1,27 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
+using UnityEngine.Animations;
 
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class PlayerController25D : MonoBehaviour
 {
     [Header("Hareket Hızları")]
-    [SerializeField] private float walkSpeed = 4f;        // Normal yürüme
-    [SerializeField] private float runSpeed = 10f;        // Shift ile hızlı koşma
-    [SerializeField] private float crouchSpeed = 2f;      // Eğilerek yavaş yürüme
+    [SerializeField] private float walkSpeed = 4f;
+    [SerializeField] private float runSpeed = 9f;
+    [SerializeField] private float crouchSpeed = 2f;
     [SerializeField] private float jumpForce = 12f;
 
-    [Header("Görsel Boyut Ayarları")]
-    [SerializeField] private Transform visualModel;       // İçine koyduğumuz 3D karakter
-    [SerializeField] private float crouchHeight = 1f;
+    [Header("Animasyon Dosyaları")]
+    [SerializeField] private AnimationClip idleClip;
+    [SerializeField] private AnimationClip runClip;
+    [SerializeField] private AnimationClip jumpClip;
+
+    [Header("Görsel ve Eğilme Ayarları")]
+    [SerializeField] private Transform visualModel;
+    [SerializeField] private float crouchHeight = 1.1f;
+    [SerializeField] private float modelStandingY = -1f;      // Normal duruş ayak yüksekliği
+    [SerializeField] private float modelCrouchY = -0.55f;     // Eğilince ayakların yere batmaması için yükseklik
 
     [Header("Zemin Kontrolü")]
     [SerializeField] private Transform groundCheck;
@@ -21,6 +30,7 @@ public class PlayerController25D : MonoBehaviour
 
     private Rigidbody rb;
     private CapsuleCollider col;
+    private Animator anim;
     private float horizontalInput;
     private bool isGrounded;
     private bool jumpRequested;
@@ -29,7 +39,16 @@ public class PlayerController25D : MonoBehaviour
 
     private float originalColliderHeight;
     private Vector3 originalColliderCenter;
-    private Vector3 originalVisualScale = Vector3.one;
+
+    private PlayableGraph playableGraph;
+    private AnimationMixerPlayable mixer;
+    private AnimationClipPlayable idlePlayable;
+    private AnimationClipPlayable runPlayable;
+    private AnimationClipPlayable jumpPlayable;
+    private bool hasAnimationSetup = false;
+
+    private double idleTimer = 0.0;
+    private double runTimer = 0.0;
 
     private void Awake()
     {
@@ -39,7 +58,6 @@ public class PlayerController25D : MonoBehaviour
         originalColliderHeight = col.height;
         originalColliderCenter = col.center;
 
-        // Eğer visualModel atanmadıysa ilk alt nesneyi (çocuğu) otomatik bul
         if (visualModel == null && transform.childCount > 0)
         {
             visualModel = transform.GetChild(0);
@@ -47,8 +65,48 @@ public class PlayerController25D : MonoBehaviour
 
         if (visualModel != null)
         {
-            originalVisualScale = visualModel.localScale;
+            anim = visualModel.GetComponent<Animator>();
+            if (anim == null) anim = visualModel.gameObject.AddComponent<Animator>();
+            anim.applyRootMotion = false;
         }
+
+        if (anim == null) anim = GetComponentInChildren<Animator>();
+    }
+
+    private void Start()
+    {
+        SetupAnimations();
+    }
+
+    private void SetupAnimations()
+    {
+        if (anim == null || idleClip == null || runClip == null) return;
+
+        playableGraph = PlayableGraph.Create("PlayerGraph");
+        var playableOutput = AnimationPlayableOutput.Create(playableGraph, "Animation", anim);
+
+        int count = (jumpClip != null) ? 3 : 2;
+        mixer = AnimationMixerPlayable.Create(playableGraph, count);
+        playableOutput.SetSourcePlayable(mixer);
+
+        idlePlayable = AnimationClipPlayable.Create(playableGraph, idleClip);
+        runPlayable = AnimationClipPlayable.Create(playableGraph, runClip);
+
+        idleClip.wrapMode = WrapMode.Loop;
+        runClip.wrapMode = WrapMode.Loop;
+
+        playableGraph.Connect(idlePlayable, 0, mixer, 0);
+        playableGraph.Connect(runPlayable, 0, mixer, 1);
+
+        if (jumpClip != null)
+        {
+            jumpPlayable = AnimationClipPlayable.Create(playableGraph, jumpClip);
+            playableGraph.Connect(jumpPlayable, 0, mixer, 2);
+        }
+
+        mixer.SetInputWeight(0, 1f);
+        playableGraph.Play();
+        hasAnimationSetup = true;
     }
 
     private void Update()
@@ -59,73 +117,128 @@ public class PlayerController25D : MonoBehaviour
 
         if (Keyboard.current != null)
         {
-            // Sağ - Sol Hareketi (A / D veya Oklar)
             if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed)
                 horizontalInput = -1f;
             else if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed)
                 horizontalInput = 1f;
 
-            // Shift ile Koşma
             if (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)
-            {
                 isRunning = true;
-            }
 
-            // Ctrl veya C tuşu ile Eğilme (C tuşu çok pratiktir)
             if (Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.cKey.isPressed)
             {
                 isCrouching = true;
-                isRunning = false; // Eğilirken koşulamaz
+                isRunning = false;
             }
 
-            // Zıplama (Boşluk / Space)
             if (Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded && !isCrouching)
             {
                 jumpRequested = true;
             }
         }
 
-        // Karakterin görsel ve fiziksel boyunu eğilmeye göre küçült/büyüt
-        HandleCrouchVisuals();
+        // Çarpışma kutusunu (Collider) ayarla: Alt tabanı zeminde sabit tutuyoruz
+        if (isCrouching)
+        {
+            col.height = Mathf.Lerp(col.height, crouchHeight, Time.deltaTime * 15f);
+            col.center = Vector3.Lerp(col.center, new Vector3(0f, -0.45f, 0f), Time.deltaTime * 15f);
+        }
+        else
+        {
+            col.height = Mathf.Lerp(col.height, originalColliderHeight, Time.deltaTime * 15f);
+            col.center = Vector3.Lerp(col.center, originalColliderCenter, Time.deltaTime * 15f);
+        }
 
-        // Karakterin baktığı yönü çevirme
+        // Yön çevirme
         if (horizontalInput > 0)
-        {
             transform.rotation = Quaternion.Euler(0, 90f, 0);
-        }
         else if (horizontalInput < 0)
-        {
             transform.rotation = Quaternion.Euler(0, -90f, 0);
+
+        UpdateAnimationsAndSteps();
+    }
+
+    // KRİTİK DÜZELTME: Eğilince ayakların yerin içine batmasını engellemek için modeli yukarı kaldırıyoruz
+    private void LateUpdate()
+    {
+        if (visualModel != null)
+        {
+            float targetScaleY = isCrouching ? 0.6f : 1f;
+            float targetPosY = isCrouching ? modelCrouchY : modelStandingY;
+
+            // Boyutu ayarla
+            visualModel.localScale = new Vector3(1f, targetScaleY, 1f);
+
+            // Ayak pozisyonunu zemine göre hizala
+            Vector3 currentPos = visualModel.localPosition;
+            visualModel.localPosition = new Vector3(currentPos.x, Mathf.Lerp(currentPos.y, targetPosY, Time.deltaTime * 15f), currentPos.z);
         }
+    }
+
+    private void UpdateAnimationsAndSteps()
+    {
+        if (!hasAnimationSetup || !playableGraph.IsValid()) return;
+
+        float targetIdle = 0f;
+        float targetRun = 0f;
+        float targetJump = 0f;
+
+        if (!isGrounded && jumpClip != null)
+        {
+            targetJump = 1f;
+        }
+        else if (Mathf.Abs(horizontalInput) > 0.1f)
+        {
+            targetRun = 1f;
+
+            float stepSpeed = isRunning ? 1.5f : 1.0f;
+            runTimer += Time.deltaTime * stepSpeed;
+            if (runClip.length > 0 && runTimer >= runClip.length)
+                runTimer -= runClip.length;
+
+            runPlayable.SetTime(runTimer);
+        }
+        else
+        {
+            targetIdle = 1f;
+
+            idleTimer += Time.deltaTime;
+            if (idleClip.length > 0 && idleTimer >= idleClip.length)
+                idleTimer -= idleClip.length;
+
+            idlePlayable.SetTime(idleTimer);
+        }
+
+        float blendSpeed = Time.deltaTime * 12f;
+        mixer.SetInputWeight(0, Mathf.MoveTowards(mixer.GetInputWeight(0), targetIdle, blendSpeed));
+        mixer.SetInputWeight(1, Mathf.MoveTowards(mixer.GetInputWeight(1), targetRun, blendSpeed));
+
+        if (jumpClip != null)
+            mixer.SetInputWeight(2, Mathf.MoveTowards(mixer.GetInputWeight(2), targetJump, blendSpeed));
     }
 
     private void FixedUpdate()
     {
-        // Zemin kontrolü
         if (groundCheck != null)
             isGrounded = Physics.CheckSphere(groundCheck.position, checkRadius, groundLayer);
         else
             isGrounded = Physics.Raycast(transform.position, Vector3.down, (col.height / 2f) + 0.1f);
 
-        // Hız seçimi
         float currentSpeed = walkSpeed;
         if (isCrouching)
             currentSpeed = crouchSpeed;
         else if (isRunning)
             currentSpeed = runSpeed;
 
-        // Hareketi uygula
         Vector3 currentVelocity = rb.linearVelocity;
         rb.linearVelocity = new Vector3(horizontalInput * currentSpeed, currentVelocity.y, 0f);
 
-        // Zıplamayı uygula
         if (jumpRequested)
         {
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, 0f);
             jumpRequested = false;
         }
 
-        // Boşluğa düşerse geri ışınla
         if (transform.position.y < -10f)
         {
             rb.linearVelocity = Vector3.zero;
@@ -133,31 +246,9 @@ public class PlayerController25D : MonoBehaviour
         }
     }
 
-    private void HandleCrouchVisuals()
+    private void OnDestroy()
     {
-        if (isCrouching)
-        {
-            // Fizik kutusunu küçült
-            col.height = Mathf.Lerp(col.height, crouchHeight, Time.deltaTime * 15f);
-            col.center = Vector3.Lerp(col.center, new Vector3(0f, -0.5f, 0f), Time.deltaTime * 15f);
-
-            // 3D Karakter modelini görsel olarak da ez/çömel (Y boyunu yarıya indir)
-            if (visualModel != null)
-            {
-                Vector3 crouchScale = new Vector3(originalVisualScale.x, originalVisualScale.y * 0.5f, originalVisualScale.z);
-                visualModel.localScale = Vector3.Lerp(visualModel.localScale, crouchScale, Time.deltaTime * 15f);
-            }
-        }
-        else
-        {
-            // Eski normal haline dön
-            col.height = Mathf.Lerp(col.height, originalColliderHeight, Time.deltaTime * 15f);
-            col.center = Vector3.Lerp(col.center, originalColliderCenter, Time.deltaTime * 15f);
-
-            if (visualModel != null)
-            {
-                visualModel.localScale = Vector3.Lerp(visualModel.localScale, originalVisualScale, Time.deltaTime * 15f);
-            }
-        }
+        if (playableGraph.IsValid())
+            playableGraph.Destroy();
     }
 }
