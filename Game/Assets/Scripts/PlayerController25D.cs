@@ -6,11 +6,21 @@ using UnityEngine.Animations;
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class PlayerController25D : MonoBehaviour
 {
-    [Header("Hareket Hızları")]
+    [Header("Hareket Hızları ve İvme")]
     [SerializeField] private float walkSpeed = 4f;
-    [SerializeField] private float runSpeed = 9f;
-    [SerializeField] private float crouchSpeed = 2.5f;
+    [SerializeField] private float runSpeed = 8.5f;
+    [SerializeField] private float crouchSpeed = 2.2f;
+    [SerializeField] private float acceleration = 40f;
+    [SerializeField] private float deceleration = 30f;
+
+    [Header("Zıplama ve Çift Zıplama")]
     [SerializeField] private float jumpForce = 12f;
+    [SerializeField] private float doubleJumpForce = 11f;
+    [SerializeField] private int maxJumps = 2;
+    [SerializeField] private float coyoteTime = 0.15f;
+    [SerializeField] private float jumpBufferTime = 0.15f;
+    [SerializeField] private float fallMultiplier = 2.5f;
+    [SerializeField] private float lowJumpMultiplier = 2f;
 
     [Header("Animasyon Dosyaları")]
     [SerializeField] private AnimationClip idleClip;
@@ -18,25 +28,29 @@ public class PlayerController25D : MonoBehaviour
     [SerializeField] private AnimationClip jumpClip;
     [SerializeField] private AnimationClip crouchClip;
 
-    [Header("Görsel ve Eğilme Ayarları")]
+    [Header("Görsel Boyut ve Yükseklik Ayarları")]
     [SerializeField] private Transform visualModel;
+    [Tooltip("Karakter çok küçükse bu sayıyı 10, 50 veya 100 yapabilirsin")]
+    [SerializeField] private float modelScale = 1f;         // Karıncalığı düzelten büyütme çarpanı
     [SerializeField] private float crouchHeight = 1.1f;
     [SerializeField] private float modelStandingY = -1f;
     [SerializeField] private float modelCrouchY = -0.55f;
 
-    [Header("Zemin Kontrolü")]
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private float checkRadius = 0.3f;
-    [SerializeField] private LayerMask groundLayer;
+    [HideInInspector] public bool isInteracting = false;
 
     private Rigidbody rb;
     private CapsuleCollider col;
     private Animator anim;
     private float horizontalInput;
     private bool isGrounded;
-    private bool jumpRequested;
     private bool isCrouching;
     private bool isRunning;
+    private bool isJumpPressed;
+
+    private int jumpsRemaining;
+    private float coyoteCounter;
+    private float jumpBufferCounter;
+    private float currentVelocityX;
 
     private float originalColliderHeight;
     private Vector3 originalColliderCenter;
@@ -62,9 +76,7 @@ public class PlayerController25D : MonoBehaviour
         originalColliderCenter = col.center;
 
         if (visualModel == null && transform.childCount > 0)
-        {
             visualModel = transform.GetChild(0);
-        }
 
         if (visualModel != null)
         {
@@ -79,6 +91,7 @@ public class PlayerController25D : MonoBehaviour
     private void Start()
     {
         SetupAnimations();
+        jumpsRemaining = maxJumps;
     }
 
     private void SetupAnimations()
@@ -88,15 +101,12 @@ public class PlayerController25D : MonoBehaviour
         playableGraph = PlayableGraph.Create("PlayerGraph");
         var playableOutput = AnimationPlayableOutput.Create(playableGraph, "Animation", anim);
 
-        int count = 3;
-        if (crouchClip != null) count = 4;
-
+        int count = (crouchClip != null) ? 4 : 3;
         mixer = AnimationMixerPlayable.Create(playableGraph, count);
         playableOutput.SetSourcePlayable(mixer);
 
         idlePlayable = AnimationClipPlayable.Create(playableGraph, idleClip);
         runPlayable = AnimationClipPlayable.Create(playableGraph, runClip);
-
         idleClip.wrapMode = WrapMode.Loop;
         runClip.wrapMode = WrapMode.Loop;
 
@@ -123,6 +133,12 @@ public class PlayerController25D : MonoBehaviour
 
     private void Update()
     {
+        if (isInteracting)
+        {
+            horizontalInput = 0f;
+            return;
+        }
+
         horizontalInput = 0f;
         isRunning = false;
         isCrouching = false;
@@ -137,20 +153,53 @@ public class PlayerController25D : MonoBehaviour
             if (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)
                 isRunning = true;
 
-            // Sol Ctrl veya C ile eğilme
             if (Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.cKey.isPressed)
             {
                 isCrouching = true;
                 isRunning = false;
             }
 
-            if (Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded && !isCrouching)
+            isJumpPressed = Keyboard.current.spaceKey.isPressed;
+
+            if (Keyboard.current.spaceKey.wasPressedThisFrame && !isCrouching)
             {
-                jumpRequested = true;
+                if (coyoteCounter > 0f)
+                {
+                    ExecuteJump(jumpForce);
+                    jumpsRemaining = maxJumps - 1;
+                    coyoteCounter = 0f;
+                }
+                else if (jumpsRemaining > 0)
+                {
+                    ExecuteJump(doubleJumpForce);
+                    jumpsRemaining--;
+                }
+                else
+                {
+                    jumpBufferCounter = jumpBufferTime;
+                }
             }
         }
 
-        // Çarpışma kutusunun boyutu
+        if (isGrounded)
+        {
+            coyoteCounter = coyoteTime;
+            jumpsRemaining = maxJumps;
+
+            if (jumpBufferCounter > 0f)
+            {
+                ExecuteJump(jumpForce);
+                jumpsRemaining = maxJumps - 1;
+                jumpBufferCounter = 0f;
+            }
+        }
+        else
+        {
+            coyoteCounter -= Time.deltaTime;
+        }
+
+        jumpBufferCounter -= Time.deltaTime;
+
         if (isCrouching)
         {
             col.height = Mathf.Lerp(col.height, crouchHeight, Time.deltaTime * 15f);
@@ -162,16 +211,56 @@ public class PlayerController25D : MonoBehaviour
             col.center = Vector3.Lerp(col.center, originalColliderCenter, Time.deltaTime * 15f);
         }
 
-        // Yön çevirme
         if (horizontalInput > 0)
             transform.rotation = Quaternion.Euler(0, 90f, 0);
         else if (horizontalInput < 0)
             transform.rotation = Quaternion.Euler(0, -90f, 0);
 
-        UpdateAnimationsAndSteps();
+        UpdateAnimations();
     }
 
-    private void UpdateAnimationsAndSteps()
+    private void ExecuteJump(float force)
+    {
+        Vector3 vel = rb.linearVelocity;
+        vel.y = force;
+        rb.linearVelocity = vel;
+    }
+
+    private void FixedUpdate()
+    {
+        Vector3 rayStart = transform.position + col.center;
+        float rayLength = (col.height / 2f) + 0.25f;
+        isGrounded = Physics.Raycast(rayStart, Vector3.down, rayLength);
+
+        float targetSpeed = walkSpeed;
+        if (isCrouching)
+            targetSpeed = crouchSpeed;
+        else if (isRunning)
+            targetSpeed = runSpeed;
+
+        float targetVelocityX = horizontalInput * targetSpeed;
+
+        float accelRate = (Mathf.Abs(targetVelocityX) > 0.01f) ? acceleration : deceleration;
+        currentVelocityX = Mathf.MoveTowards(currentVelocityX, targetVelocityX, accelRate * Time.fixedDeltaTime);
+
+        Vector3 vel = rb.linearVelocity;
+        vel.x = currentVelocityX;
+
+        if (vel.y < 0)
+            vel.y += Physics.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime;
+        else if (vel.y > 0 && !isJumpPressed)
+            vel.y += Physics.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
+
+        rb.linearVelocity = vel;
+
+        if (transform.position.y < -10f)
+        {
+            rb.linearVelocity = Vector3.zero;
+            transform.position = new Vector3(0f, 3f, 0f);
+        }
+    }
+
+    private void UpdateAnimations()
     {
         if (!hasAnimationSetup || !playableGraph.IsValid()) return;
 
@@ -182,43 +271,36 @@ public class PlayerController25D : MonoBehaviour
 
         bool isMoving = Mathf.Abs(horizontalInput) > 0.1f;
 
-        // KRİTİK DÜZELTME: Eğilirken asla "havada zıplıyor" durumuna sokmuyoruz!
         if (!isGrounded && !isCrouching && jumpClip != null)
         {
             targetJump = 1f;
         }
         else if (isCrouching)
         {
-            // EĞİLME DURUMU
             if (crouchClip != null)
             {
                 targetCrouch = 1f;
                 if (isMoving)
                 {
-                    crouchTimer += Time.deltaTime * 1.0f;
+                    crouchTimer += Time.deltaTime;
                     if (crouchClip.length > 0 && crouchTimer >= crouchClip.length) crouchTimer -= crouchClip.length;
                     crouchPlayable.SetTime(crouchTimer);
                 }
             }
             else
             {
-                // Özel animasyon yoksa mevcut koşan bacakları sinsi adımlarla zorla yürüt
                 if (isMoving)
                 {
                     targetRun = 1f;
-                    runTimer += Time.deltaTime * 0.75f;
+                    runTimer += Time.deltaTime * 0.7f;
                     if (runClip.length > 0 && runTimer >= runClip.length) runTimer -= runClip.length;
                     runPlayable.SetTime(runTimer);
                 }
-                else
-                {
-                    targetIdle = 1f;
-                }
+                else targetIdle = 1f;
             }
         }
         else if (isMoving)
         {
-            // NORMAL AYAKTA KOŞMA
             targetRun = 1f;
             float stepSpeed = isRunning ? 1.5f : 1.0f;
             runTimer += Time.deltaTime * stepSpeed;
@@ -227,14 +309,12 @@ public class PlayerController25D : MonoBehaviour
         }
         else
         {
-            // NORMAL DURMA
             targetIdle = 1f;
             idleTimer += Time.deltaTime;
             if (idleClip.length > 0 && idleTimer >= idleClip.length) idleTimer -= idleClip.length;
             idlePlayable.SetTime(idleTimer);
         }
 
-        // Yumuşak geçişler
         float blendSpeed = Time.deltaTime * 15f;
         mixer.SetInputWeight(0, Mathf.MoveTowards(mixer.GetInputWeight(0), targetIdle, blendSpeed));
         mixer.SetInputWeight(1, Mathf.MoveTowards(mixer.GetInputWeight(1), targetRun, blendSpeed));
@@ -246,53 +326,18 @@ public class PlayerController25D : MonoBehaviour
             mixer.SetInputWeight(3, Mathf.MoveTowards(mixer.GetInputWeight(3), targetCrouch, blendSpeed));
     }
 
+    // BOYUTU BURADAN BÜYÜTÜYORUZ
     private void LateUpdate()
     {
         if (visualModel != null)
         {
-            float targetScaleY = (isCrouching && crouchClip == null) ? 0.6f : 1f;
+            float targetScaleY = (isCrouching && crouchClip == null) ? (0.6f * modelScale) : modelScale;
             float targetPosY = (isCrouching && crouchClip == null) ? modelCrouchY : modelStandingY;
 
-            visualModel.localScale = new Vector3(1f, targetScaleY, 1f);
+            visualModel.localScale = new Vector3(modelScale, targetScaleY, modelScale);
 
             Vector3 currentPos = visualModel.localPosition;
             visualModel.localPosition = new Vector3(currentPos.x, Mathf.Lerp(currentPos.y, targetPosY, Time.deltaTime * 15f), currentPos.z);
-        }
-    }
-
-    private void FixedUpdate()
-    {
-        // KRİTİK DÜZELTME: Zemin ışını collider'ın merkezinden yere doğru atılıyor, eğilince asla kopmuyor
-        if (groundCheck != null)
-        {
-            isGrounded = Physics.CheckSphere(groundCheck.position, checkRadius, groundLayer);
-        }
-        else
-        {
-            Vector3 rayStart = transform.position + col.center;
-            float rayLength = (col.height / 2f) + 0.3f;
-            isGrounded = Physics.Raycast(rayStart, Vector3.down, rayLength);
-        }
-
-        float currentSpeed = walkSpeed;
-        if (isCrouching)
-            currentSpeed = crouchSpeed;
-        else if (isRunning)
-            currentSpeed = runSpeed;
-
-        Vector3 currentVelocity = rb.linearVelocity;
-        rb.linearVelocity = new Vector3(horizontalInput * currentSpeed, currentVelocity.y, 0f);
-
-        if (jumpRequested)
-        {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, 0f);
-            jumpRequested = false;
-        }
-
-        if (transform.position.y < -10f)
-        {
-            rb.linearVelocity = Vector3.zero;
-            transform.position = new Vector3(0f, 3f, 0f);
         }
     }
 
