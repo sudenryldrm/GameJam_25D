@@ -6,10 +6,9 @@ using UnityEngine.Animations;
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class PlayerController25D : MonoBehaviour
 {
-    [Header("Hareket Hızları ve İvme")]
+    [Header("Hareket Hızları ve İvme (GDD Standartları)")]
     [SerializeField] private float walkSpeed = 4f;
     [SerializeField] private float runSpeed = 8.5f;
-    [SerializeField] private float crouchSpeed = 2.2f;
     [SerializeField] private float acceleration = 40f;
     [SerializeField] private float deceleration = 30f;
 
@@ -22,19 +21,15 @@ public class PlayerController25D : MonoBehaviour
     [SerializeField] private float fallMultiplier = 2.5f;
     [SerializeField] private float lowJumpMultiplier = 2f;
 
-    [Header("Animasyon Dosyaları")]
+    [Header("Animasyon Dosyaları (3 Temel Animasyon)")]
     [SerializeField] private AnimationClip idleClip;
     [SerializeField] private AnimationClip runClip;
     [SerializeField] private AnimationClip jumpClip;
-    [SerializeField] private AnimationClip crouchClip;
 
-    [Header("Görsel Boyut ve Yükseklik Ayarları")]
+    [Header("Görsel Ölçek Ayarı")]
     [SerializeField] private Transform visualModel;
-    [Tooltip("Karakter çok küçükse bu sayıyı 10, 50 veya 100 yapabilirsin")]
-    [SerializeField] private float modelScale = 1f;         // Karıncalığı düzelten büyütme çarpanı
-    [SerializeField] private float crouchHeight = 1.1f;
+    [SerializeField] private float modelScale = 40f;       // Sisteme kaydettiğimiz 40 ölçeği
     [SerializeField] private float modelStandingY = -1f;
-    [SerializeField] private float modelCrouchY = -0.55f;
 
     [HideInInspector] public bool isInteracting = false;
 
@@ -43,7 +38,6 @@ public class PlayerController25D : MonoBehaviour
     private Animator anim;
     private float horizontalInput;
     private bool isGrounded;
-    private bool isCrouching;
     private bool isRunning;
     private bool isJumpPressed;
 
@@ -52,28 +46,20 @@ public class PlayerController25D : MonoBehaviour
     private float jumpBufferCounter;
     private float currentVelocityX;
 
-    private float originalColliderHeight;
-    private Vector3 originalColliderCenter;
-
     private PlayableGraph playableGraph;
     private AnimationMixerPlayable mixer;
     private AnimationClipPlayable idlePlayable;
     private AnimationClipPlayable runPlayable;
     private AnimationClipPlayable jumpPlayable;
-    private AnimationClipPlayable crouchPlayable;
     private bool hasAnimationSetup = false;
 
     private double idleTimer = 0.0;
     private double runTimer = 0.0;
-    private double crouchTimer = 0.0;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         col = GetComponent<CapsuleCollider>();
-
-        originalColliderHeight = col.height;
-        originalColliderCenter = col.center;
 
         if (visualModel == null && transform.childCount > 0)
             visualModel = transform.GetChild(0);
@@ -101,7 +87,7 @@ public class PlayerController25D : MonoBehaviour
         playableGraph = PlayableGraph.Create("PlayerGraph");
         var playableOutput = AnimationPlayableOutput.Create(playableGraph, "Animation", anim);
 
-        int count = (crouchClip != null) ? 4 : 3;
+        int count = (jumpClip != null) ? 3 : 2;
         mixer = AnimationMixerPlayable.Create(playableGraph, count);
         playableOutput.SetSourcePlayable(mixer);
 
@@ -119,13 +105,6 @@ public class PlayerController25D : MonoBehaviour
             playableGraph.Connect(jumpPlayable, 0, mixer, 2);
         }
 
-        if (crouchClip != null)
-        {
-            crouchPlayable = AnimationClipPlayable.Create(playableGraph, crouchClip);
-            crouchClip.wrapMode = WrapMode.Loop;
-            playableGraph.Connect(crouchPlayable, 0, mixer, 3);
-        }
-
         mixer.SetInputWeight(0, 1f);
         playableGraph.Play();
         hasAnimationSetup = true;
@@ -141,7 +120,6 @@ public class PlayerController25D : MonoBehaviour
 
         horizontalInput = 0f;
         isRunning = false;
-        isCrouching = false;
 
         if (Keyboard.current != null)
         {
@@ -153,15 +131,9 @@ public class PlayerController25D : MonoBehaviour
             if (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)
                 isRunning = true;
 
-            if (Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.cKey.isPressed)
-            {
-                isCrouching = true;
-                isRunning = false;
-            }
-
             isJumpPressed = Keyboard.current.spaceKey.isPressed;
 
-            if (Keyboard.current.spaceKey.wasPressedThisFrame && !isCrouching)
+            if (Keyboard.current.spaceKey.wasPressedThisFrame)
             {
                 if (coyoteCounter > 0f)
                 {
@@ -200,17 +172,7 @@ public class PlayerController25D : MonoBehaviour
 
         jumpBufferCounter -= Time.deltaTime;
 
-        if (isCrouching)
-        {
-            col.height = Mathf.Lerp(col.height, crouchHeight, Time.deltaTime * 15f);
-            col.center = Vector3.Lerp(col.center, new Vector3(0f, -0.45f, 0f), Time.deltaTime * 15f);
-        }
-        else
-        {
-            col.height = Mathf.Lerp(col.height, originalColliderHeight, Time.deltaTime * 15f);
-            col.center = Vector3.Lerp(col.center, originalColliderCenter, Time.deltaTime * 15f);
-        }
-
+        // Yön çevirme
         if (horizontalInput > 0)
             transform.rotation = Quaternion.Euler(0, 90f, 0);
         else if (horizontalInput < 0)
@@ -228,24 +190,23 @@ public class PlayerController25D : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // Zemin kontrolü
         Vector3 rayStart = transform.position + col.center;
         float rayLength = (col.height / 2f) + 0.25f;
         isGrounded = Physics.Raycast(rayStart, Vector3.down, rayLength);
 
-        float targetSpeed = walkSpeed;
-        if (isCrouching)
-            targetSpeed = crouchSpeed;
-        else if (isRunning)
-            targetSpeed = runSpeed;
-
+        // Hız seçimi
+        float targetSpeed = isRunning ? runSpeed : walkSpeed;
         float targetVelocityX = horizontalInput * targetSpeed;
 
+        // Tok İvmelenme
         float accelRate = (Mathf.Abs(targetVelocityX) > 0.01f) ? acceleration : deceleration;
         currentVelocityX = Mathf.MoveTowards(currentVelocityX, targetVelocityX, accelRate * Time.fixedDeltaTime);
 
         Vector3 vel = rb.linearVelocity;
         vel.x = currentVelocityX;
 
+        // Değişken Zıplama Yüksekliği
         if (vel.y < 0)
             vel.y += Physics.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime;
         else if (vel.y > 0 && !isJumpPressed)
@@ -267,37 +228,12 @@ public class PlayerController25D : MonoBehaviour
         float targetIdle = 0f;
         float targetRun = 0f;
         float targetJump = 0f;
-        float targetCrouch = 0f;
 
         bool isMoving = Mathf.Abs(horizontalInput) > 0.1f;
 
-        if (!isGrounded && !isCrouching && jumpClip != null)
+        if (!isGrounded && jumpClip != null)
         {
             targetJump = 1f;
-        }
-        else if (isCrouching)
-        {
-            if (crouchClip != null)
-            {
-                targetCrouch = 1f;
-                if (isMoving)
-                {
-                    crouchTimer += Time.deltaTime;
-                    if (crouchClip.length > 0 && crouchTimer >= crouchClip.length) crouchTimer -= crouchClip.length;
-                    crouchPlayable.SetTime(crouchTimer);
-                }
-            }
-            else
-            {
-                if (isMoving)
-                {
-                    targetRun = 1f;
-                    runTimer += Time.deltaTime * 0.7f;
-                    if (runClip.length > 0 && runTimer >= runClip.length) runTimer -= runClip.length;
-                    runPlayable.SetTime(runTimer);
-                }
-                else targetIdle = 1f;
-            }
         }
         else if (isMoving)
         {
@@ -321,23 +257,17 @@ public class PlayerController25D : MonoBehaviour
 
         if (jumpClip != null)
             mixer.SetInputWeight(2, Mathf.MoveTowards(mixer.GetInputWeight(2), targetJump, blendSpeed));
-
-        if (crouchClip != null)
-            mixer.SetInputWeight(3, Mathf.MoveTowards(mixer.GetInputWeight(3), targetCrouch, blendSpeed));
     }
 
-    // BOYUTU BURADAN BÜYÜTÜYORUZ
     private void LateUpdate()
     {
         if (visualModel != null)
         {
-            float targetScaleY = (isCrouching && crouchClip == null) ? (0.6f * modelScale) : modelScale;
-            float targetPosY = (isCrouching && crouchClip == null) ? modelCrouchY : modelStandingY;
-
-            visualModel.localScale = new Vector3(modelScale, targetScaleY, modelScale);
+            // Model her zaman orijinal 40 ölçeğinde ve dik kalır
+            visualModel.localScale = new Vector3(modelScale, modelScale, modelScale);
 
             Vector3 currentPos = visualModel.localPosition;
-            visualModel.localPosition = new Vector3(currentPos.x, Mathf.Lerp(currentPos.y, targetPosY, Time.deltaTime * 15f), currentPos.z);
+            visualModel.localPosition = new Vector3(currentPos.x, Mathf.Lerp(currentPos.y, modelStandingY, Time.deltaTime * 15f), currentPos.z);
         }
     }
 
