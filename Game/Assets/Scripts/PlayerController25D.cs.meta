@@ -1,2 +1,15 @@
 fileFormatVersion: 2
 guid: d2eb989aca5f71442ae92f9faa2dcbba
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - idleClip: {instanceID: 0}
+  - runClip: {instanceID: 0}
+  - jumpClip: {instanceID: 0}
+  - visualModel: {fileID: -8679921383154817045, guid: ae2e265a6833d94419a5ce08287067c6, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

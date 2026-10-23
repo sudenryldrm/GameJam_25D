@@ -157,7 +157,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController25D
   walkSpeed: 4
   runSpeed: 10
-  crouchSpeed: 2
   acceleration: 40
   deceleration: 30
   jumpForce: 12
@@ -170,9 +169,7 @@ MonoBehaviour:
   idleClip: {fileID: 2910742486769232160, guid: 5e35c4c9cb415ec43877038fbcd8ca0b, type: 3}
   runClip: {fileID: 4188298191382927259, guid: 5617bd637670f3e4ab42c35f850e0e9c, type: 3}
   jumpClip: {fileID: -8630955994762890147, guid: 9ddf5450cba8e69458b6eb2e021ef2c6, type: 3}
-  crouchClip: {fileID: 0}
   visualModel: {fileID: 0}
-  crouchHeight: 1
+  modelScale: 40
   modelStandingY: -1
-  modelCrouchY: -0.55
   isInteracting: 0
