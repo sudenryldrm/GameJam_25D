@@ -33,6 +33,7 @@ public class PlayerController25D : MonoBehaviour
 
     [HideInInspector] public bool isInteracting = false;
 
+    private Vector3 spawnPosition;
     private Rigidbody rb;
     private CapsuleCollider col;
     private Animator anim;
@@ -58,6 +59,7 @@ public class PlayerController25D : MonoBehaviour
 
     private void Awake()
     {
+        spawnPosition = transform.position;
         rb = GetComponent<Rigidbody>();
         col = GetComponent<CapsuleCollider>();
 
@@ -217,7 +219,9 @@ public class PlayerController25D : MonoBehaviour
         if (transform.position.y < -10f)
         {
             rb.linearVelocity = Vector3.zero;
-            transform.position = new Vector3(0f, 3f, 0f);
+            // Keep this scene's starting lane when returning after a fall.
+            rb.position = spawnPosition;
+            currentVelocityX = 0f;
         }
     }
 
