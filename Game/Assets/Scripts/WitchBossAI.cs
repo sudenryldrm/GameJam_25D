@@ -19,7 +19,11 @@ public class WitchBossAI : MonoBehaviour
     [SerializeField] private float minimumThrowInterval = 2.5f;
     [SerializeField] private float maximumThrowInterval = 4f;
     [SerializeField] private float startDelay = 3.5f;
-    [SerializeField] private float arcHeight = 2f;
+    [SerializeField] private float minimumFlightTime = 0.5f;
+    [SerializeField] private float maximumFlightTime = 0.85f;
+
+    private PlayerController25D player;
+    private Rigidbody targetBody;
 
     private float throwTimer;
     private bool stopped;
@@ -28,8 +32,13 @@ public class WitchBossAI : MonoBehaviour
     {
         if (target == null)
         {
-            PlayerController25D player = FindFirstObjectByType<PlayerController25D>();
+            player = FindFirstObjectByType<PlayerController25D>();
             if (player != null) target = player.transform;
+        }
+        if (target != null)
+        {
+            player = target.GetComponent<PlayerController25D>();
+            targetBody = target.GetComponent<Rigidbody>();
         }
         ResetChase();
     }
@@ -48,7 +57,6 @@ public class WitchBossAI : MonoBehaviour
     private void Update()
     {
         if (target == null || stopped || Time.timeScale == 0f) return;
-        PlayerController25D player = target.GetComponent<PlayerController25D>();
         if (player != null && player.isInteracting) return;
 
         float gap = target.position.x - transform.position.x;
@@ -78,16 +86,21 @@ public class WitchBossAI : MonoBehaviour
         GameObject apple = Instantiate(applePrefab, origin, Quaternion.identity);
         PoisonApple projectile = apple.GetComponent<PoisonApple>();
         if (projectile == null) { Destroy(apple); return; }
-        Vector3 destination = target.position + Vector3.down * 0.25f;
-        projectile.Launch(CalculateArcVelocity(origin, destination, arcHeight), poisonCloudMaterial);
+        // Predict horizontal travel once at release: dangerous, but still dodgeable.
+        float flightTime = Mathf.Clamp(Mathf.Abs(target.position.x - origin.x) / 18f,
+            minimumFlightTime, maximumFlightTime);
+        Vector3 velocity = targetBody != null ? targetBody.linearVelocity : Vector3.zero;
+        Vector3 destination = target.position;
+        destination.x += Mathf.Clamp(velocity.x * flightTime, -10f, 10f);
+        destination.y += Mathf.Clamp(velocity.y * 0.16f, -1.5f, 2f);
+        projectile.Launch(CalculateTimedVelocity(origin, destination, flightTime), poisonCloudMaterial);
     }
 
-    public static Vector3 CalculateArcVelocity(Vector3 origin, Vector3 destination, float arc)
+    public static Vector3 CalculateTimedVelocity(Vector3 origin, Vector3 destination, float seconds)
     {
-        float gravity = Mathf.Max(0.01f, Mathf.Abs(Physics.gravity.y));
-        float apex = Mathf.Max(origin.y, destination.y) + Mathf.Max(0.1f, arc);
-        float velocityY = Mathf.Sqrt(2f * gravity * (apex - origin.y));
-        float flightTime = velocityY / gravity + Mathf.Sqrt(2f * (apex - destination.y) / gravity);
-        return new Vector3((destination.x - origin.x) / flightTime, velocityY, 0f);
+        float time = Mathf.Max(0.1f, seconds);
+        Vector3 velocity = (destination - origin) / time - Physics.gravity * (0.5f * time);
+        velocity.z = 0f;
+        return velocity;
     }
 }

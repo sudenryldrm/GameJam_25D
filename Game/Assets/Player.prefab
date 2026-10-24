@@ -142,7 +142,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 120
   m_CollisionDetection: 0
 --- !u!114 &6974143382711403822
@@ -157,17 +157,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2eb989aca5f71442ae92f9faa2dcbba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController25D
-  walkSpeed: 4
+  walkSpeed: 6
   runSpeed: 10
-  acceleration: 40
-  deceleration: 30
-  jumpForce: 12
-  doubleJumpForce: 11
+  acceleration: 32
+  deceleration: 42
+  jumpForce: 15.2
+  doubleJumpForce: 14
   maxJumps: 2
   coyoteTime: 0.15
   jumpBufferTime: 0.15
-  fallMultiplier: 2.5
-  lowJumpMultiplier: 2
+  fallMultiplier: 3.6
+  lowJumpMultiplier: 4
+  riseMultiplier: 1.6
   idleClip: {fileID: 2910742486769232160, guid: 5e35c4c9cb415ec43877038fbcd8ca0b, type: 3}
   runClip: {fileID: 4188298191382927259, guid: 5617bd637670f3e4ab42c35f850e0e9c, type: 3}
   jumpClip: {fileID: -8630955994762890147, guid: 9ddf5450cba8e69458b6eb2e021ef2c6, type: 3}

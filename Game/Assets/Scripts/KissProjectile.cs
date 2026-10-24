@@ -12,8 +12,13 @@ public class KissProjectile : MonoBehaviour
     private Vector3 perpendicular;
     private float elapsed;
     private bool spent;
+    private Transform target;
+    private Transform visual;
+    private float initialDistance;
+    private float closestDistance;
+    private float visualScale = 1f;
 
-    public static void Spawn(Vector3 start, Vector3 destination, Material material)
+    public static void Spawn(Vector3 start, Vector3 destination, Material material, Transform target = null)
     {
         GameObject projectile = new GameObject("Kiss_Heart_Placeholder");
         projectile.transform.position = start;
@@ -23,13 +28,20 @@ public class KissProjectile : MonoBehaviour
         Rigidbody body = projectile.AddComponent<Rigidbody>();
         body.isKinematic = true;
         body.useGravity = false;
+        body.interpolation = RigidbodyInterpolation.Interpolate;
         body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-        MeshFilter filter = projectile.AddComponent<MeshFilter>();
+        GameObject heartVisual = new GameObject("Heart_Visual");
+        heartVisual.transform.SetParent(projectile.transform, false);
+        MeshFilter filter = heartVisual.AddComponent<MeshFilter>();
         if (heartMesh == null) heartMesh = BuildHeart();
         filter.sharedMesh = heartMesh;
-        if (material != null) projectile.AddComponent<MeshRenderer>().sharedMaterial = material;
+        if (material != null) heartVisual.AddComponent<MeshRenderer>().sharedMaterial = material;
         KissProjectile kiss = projectile.AddComponent<KissProjectile>();
         kiss.rb = body;
+        kiss.target = target;
+        kiss.visual = heartVisual.transform;
+        kiss.initialDistance = Mathf.Max(1f, Vector3.Distance(start, destination));
+        kiss.closestDistance = kiss.initialDistance;
         kiss.origin = start;
         Vector3 aim = destination - start;
         aim.z = 0f;
@@ -67,6 +79,15 @@ public class KissProjectile : MonoBehaviour
         if (spent || rb == null) return;
         elapsed += Time.fixedDeltaTime;
         Vector3 next = origin + direction * (Speed * elapsed) + perpendicular * (Mathf.Sin(elapsed * 6f) * 0.18f);
+        if (target != null)
+        {
+            closestDistance = Mathf.Min(closestDistance, Vector3.Distance(next, target.position));
+            float proximity = 1f - Mathf.Clamp01((closestDistance - 0.8f) / Mathf.Max(0.1f, initialDistance - 0.8f));
+            float desiredScale = Mathf.Lerp(1f, 1.9f, Mathf.SmoothStep(0f, 1f, proximity));
+            visualScale = Mathf.MoveTowards(visualScale, desiredScale, 3f * Time.fixedDeltaTime);
+            visual.localScale = Vector3.one * visualScale;
+        }
+        // Only the visual grows; the dodge hitbox stays at its original radius.
         Vector3 delta = next - rb.position;
         if (delta.sqrMagnitude > 0.00001f && Physics.SphereCast(rb.position, Radius, delta.normalized,
             out RaycastHit hit, delta.magnitude, ~0, QueryTriggerInteraction.Ignore))

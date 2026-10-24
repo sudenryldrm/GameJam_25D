@@ -7,19 +7,21 @@ using UnityEngine.Animations;
 public class PlayerController25D : MonoBehaviour
 {
     [Header("Hareket Hızları ve İvme (GDD Standartları)")]
-    [SerializeField] private float walkSpeed = 4f;
-    [SerializeField] private float runSpeed = 8.5f;
-    [SerializeField] private float acceleration = 40f;
-    [SerializeField] private float deceleration = 30f;
+    [SerializeField] private float walkSpeed = 6f;
+    [SerializeField] private float runSpeed = 10f;
+    [SerializeField] private float acceleration = 32f;
+    [SerializeField] private float deceleration = 42f;
 
     [Header("Zıplama ve Çift Zıplama")]
-    [SerializeField] private float jumpForce = 12f;
-    [SerializeField] private float doubleJumpForce = 11f;
+    [SerializeField] private float jumpForce = 15.2f;
+    [SerializeField] private float doubleJumpForce = 14f;
     [SerializeField] private int maxJumps = 2;
     [SerializeField] private float coyoteTime = 0.15f;
     [SerializeField] private float jumpBufferTime = 0.15f;
-    [SerializeField] private float fallMultiplier = 2.5f;
-    [SerializeField] private float lowJumpMultiplier = 2f;
+    [SerializeField] private float fallMultiplier = 3.6f;
+    [SerializeField] private float lowJumpMultiplier = 4f;
+
+    [SerializeField] private float riseMultiplier = 1.6f;
 
     [Header("Animasyon Dosyaları (3 Temel Animasyon)")]
     [SerializeField] private AnimationClip idleClip;
@@ -64,6 +66,7 @@ public class PlayerController25D : MonoBehaviour
     {
         spawnPosition = transform.position;
         rb = GetComponent<Rigidbody>();
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
         col = GetComponent<CapsuleCollider>();
 
         if (visualModel == null && transform.childCount > 0)
@@ -269,6 +272,8 @@ public class PlayerController25D : MonoBehaviour
         Vector3 vel = rb.linearVelocity;
         vel.y = force;
         rb.linearVelocity = vel;
+        isGrounded = false;
+        coyoteCounter = 0f;
     }
 
     private void FixedUpdate()
@@ -277,7 +282,9 @@ public class PlayerController25D : MonoBehaviour
         Vector3 rayStart = transform.position + col.center;
         float rayLength = (col.height / 2f) + 0.25f;
         isGrounded = Physics.Raycast(rayStart, Vector3.down, out RaycastHit groundHit, rayLength, ~0, QueryTriggerInteraction.Ignore)
-            && groundHit.normal.y > 0.35f;
+            && groundHit.normal.y > 0.35f
+            && (rb.linearVelocity.y <= 0.1f || (rb.linearVelocity.y < jumpForce * 0.5f
+                && groundHit.collider.GetComponent<StairRamp>() != null));
 
         // Hız seçimi
         float targetSpeed = isRunning ? runSpeed : walkSpeed;
@@ -297,8 +304,8 @@ public class PlayerController25D : MonoBehaviour
         // Değişken Zıplama Yüksekliği
         else if (vel.y < 0)
             vel.y += Physics.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime;
-        else if (vel.y > 0 && !isJumpPressed)
-            vel.y += Physics.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
+        else if (vel.y > 0f)
+            vel.y += Physics.gravity.y * ((isJumpPressed ? riseMultiplier : lowJumpMultiplier) - 1f) * Time.fixedDeltaTime;
 
         rb.linearVelocity = vel;
 
@@ -347,7 +354,7 @@ public class PlayerController25D : MonoBehaviour
         else if (isMoving)
         {
             targetRun = 1f;
-            float stepSpeed = isRunning ? 1.5f : 1.0f;
+            float stepSpeed = Mathf.Lerp(0.9f, 1.5f, Mathf.Abs(currentVelocityX) / runSpeed);
             runTimer += Time.deltaTime * stepSpeed;
             if (runClip.length > 0 && runTimer >= runClip.length) runTimer -= runClip.length;
             runPlayable.SetTime(runTimer);

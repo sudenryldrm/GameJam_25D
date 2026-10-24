@@ -816,7 +816,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1035164844434120024, guid: e2ad672d2c6bd894cbf4604c022d19b1, type: 3}
       propertyPath: orthographic
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1035164844434120024, guid: e2ad672d2c6bd894cbf4604c022d19b1, type: 3}
       propertyPath: m_FOVAxisMode

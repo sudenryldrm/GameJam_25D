@@ -69,8 +69,8 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
-  orthographic size: 5
+  orthographic: 1
+  orthographic size: 7.2
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -151,5 +151,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollow25D
   target: {fileID: 0}
-  smoothSpeed: 5
-  offset: {x: 0, y: 2, z: -10}
+  smoothSpeed: 6
+  offset: {x: 0, y: 2.2, z: -20}
+  useSceneProfile: 1
+  viewSize: 7.2
+  verticalDeadZone: 0.9
+  lookAhead: 1.6
