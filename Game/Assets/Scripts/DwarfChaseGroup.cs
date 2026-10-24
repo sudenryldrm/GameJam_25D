@@ -18,6 +18,11 @@ public class DwarfChaseGroup : MonoBehaviour
     private CapsuleCollider playerCollider;
     private Rigidbody playerBody;
     private DwarfPursuer[] dwarfs;
+    [Header("Cüce Baltaları")]
+    [SerializeField] private float firstAxeDelay = 4.5f;
+    [SerializeField] private float minimumAxeInterval = 4f;
+    [SerializeField] private float maximumAxeInterval = 6f;
+    private float axeThrowTimer;
     public bool Ready { get; private set; }
     public bool IsFollowing => Ready && player != null && !player.isInteracting && Time.timeScale > 0f;
     public float TotalDistance => trail.Count > 0 ? trail[trail.Count - 1].distance : 0f;
@@ -32,6 +37,7 @@ public class DwarfChaseGroup : MonoBehaviour
         dwarfs = GetComponentsInChildren<DwarfPursuer>(true);
         player.Respawned += ResetTrail;
         ResetTrail();
+        axeThrowTimer = firstAxeDelay;
     }
 
     // Record the horizontal route on the floor, never the player's jump arc.
@@ -52,6 +58,31 @@ public class DwarfChaseGroup : MonoBehaviour
             point.y = hit.point.y;
         else point.y = bounds.max.y;
         return point;
+    }
+
+    private void Update()
+    {
+        if (!IsFollowing || dwarfs == null || dwarfs.Length == 0) return;
+        axeThrowTimer -= Time.deltaTime;
+        if (axeThrowTimer > 0f) return;
+
+        DwarfPursuer thrower = dwarfs[Random.Range(0, dwarfs.Length)];
+        if (thrower != null && target != null)
+        {
+            Vector3 origin = thrower.transform.position + Vector3.up * 0.8f +
+                Vector3.right * (target.position.x >= thrower.transform.position.x ? 0.25f : -0.25f);
+            origin.z = target.position.z;
+            float flightTime = Mathf.Clamp(Mathf.Abs(target.position.x - origin.x) / 13f, 0.45f, 1.05f);
+            Vector3 destination = target.position;
+            if (playerBody != null)
+            {
+                destination.x += Mathf.Clamp(playerBody.linearVelocity.x * flightTime, -4f, 4f);
+                destination.y += Mathf.Clamp(playerBody.linearVelocity.y * flightTime * 0.35f, -1.5f, 1.5f);
+            }
+            DwarfAxeProjectile.Spawn(origin, destination, flightTime);
+        }
+        axeThrowTimer = Random.Range(Mathf.Max(1f, minimumAxeInterval),
+            Mathf.Max(minimumAxeInterval, maximumAxeInterval));
     }
 
     private void FixedUpdate()
@@ -80,6 +111,7 @@ public class DwarfChaseGroup : MonoBehaviour
     {
         if (player == null) return;
         Ready = false;
+        axeThrowTimer = firstAxeDelay;
         trail.Clear();
         Vector3 feet = PlayerFeet();
         Vector3 start = feet - Vector3.right * (firstDistance + spacing * 6 + 0.5f);
