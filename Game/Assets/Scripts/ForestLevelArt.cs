@@ -58,7 +58,8 @@ public sealed class ForestLevelArt : MonoBehaviour
             if (item == null || item.model == null) { complete = false; continue; }
             Transform model = item.model;
             model.localScale = Vector3.one;
-            model.SetPositionAndRotation(Vector3.zero, Quaternion.Euler(0f, item.yaw, 0f));
+            model.SetPositionAndRotation(Vector3.zero,
+                item.kind == ArtKind.Grass ? Quaternion.identity : Quaternion.Euler(0f, item.yaw, 0f));
             MeshRenderer[] renderers = model.GetComponentsInChildren<MeshRenderer>(true);
             foreach (MeshRenderer renderer in renderers)
             {
@@ -69,6 +70,19 @@ public sealed class ForestLevelArt : MonoBehaviour
                 // Repeated low-poly decorations receive light but do not add shadow draws.
                 renderer.shadowCastingMode = item.kind == ArtKind.Platform ? ShadowCastingMode.On : ShadowCastingMode.Off;
                 renderer.receiveShadows = true;
+            }
+            // Grass.fbx blades use their longest axis as height. Some Unity FBX
+            // imports put the axis conversion on the root, which layout resets.
+            // Inspect the unscaled art first, stand it up, then apply ground yaw.
+            if (item.kind == ArtKind.Grass && TryBounds(renderers, out Bounds grassBounds))
+            {
+                Vector3 size = grassBounds.size;
+                Quaternion upright = Quaternion.identity;
+                if (size.z > size.y && size.z >= size.x)
+                    upright = Quaternion.FromToRotation(Vector3.forward, Vector3.up);
+                else if (size.x > size.y && size.x > size.z)
+                    upright = Quaternion.FromToRotation(Vector3.right, Vector3.up);
+                model.rotation = Quaternion.Euler(0f, item.yaw, 0f) * upright;
             }
             if (!TryBounds(renderers, out Bounds bounds) || bounds.size.x < 0.0001f || bounds.size.y < 0.0001f || bounds.size.z < 0.0001f)
             { complete = false; continue; }
@@ -124,3 +138,4 @@ public sealed class ForestLevelArt : MonoBehaviour
         renderer.sharedMaterials = materials;
     }
 }
+
