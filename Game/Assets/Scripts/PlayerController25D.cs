@@ -79,12 +79,12 @@ public class PlayerController25D : MonoBehaviour
 
     private void Start()
     {
-        if (fitModelToCollider) FitVisualModel();
         SetupAnimations();
+        if (fitModelToCollider) FitVisualModel();
         jumpsRemaining = maxJumps;
     }
 
-    // Fit the bind-pose geometry, independently of imported animation/culling bounds.
+    // Fit the evaluated skin, since retargeting can change its bounds from the source mesh.
     private void FitVisualModel()
     {
         if (visualModel == null)
@@ -94,6 +94,8 @@ public class PlayerController25D : MonoBehaviour
         }
 
         visualModel.localScale = Vector3.one;
+        if (anim != null) anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        if (playableGraph.IsValid()) playableGraph.Evaluate(0f);
         if (!TryGetVisualBounds(out Bounds bounds) || bounds.size.y <= 0f)
         {
             Debug.LogError("Player model has no measurable mesh. Check its FBX import.", this);
@@ -101,13 +103,15 @@ public class PlayerController25D : MonoBehaviour
         }
 
         modelScale = col.height / bounds.size.y;
+        // Scale the measured bounds around the visual root, not around world zero.
+        Vector3 origin = visualModel.localPosition;
+        Vector3 scaledCenter = origin + (bounds.center - origin) * modelScale;
+        float scaledBottom = origin.y + (bounds.min.y - origin.y) * modelScale;
+        Vector3 position = origin;
+        position.x += col.center.x - scaledCenter.x;
+        position.z += col.center.z - scaledCenter.z;
+        position.y += col.center.y - col.height * 0.5f - scaledBottom;
         visualModel.localScale = Vector3.one * modelScale;
-        if (!TryGetVisualBounds(out bounds)) return;
-
-        Vector3 position = visualModel.localPosition;
-        position.x += col.center.x - bounds.center.x;
-        position.z += col.center.z - bounds.center.z;
-        position.y += col.center.y - col.height * 0.5f - bounds.min.y;
         visualModel.localPosition = position;
         modelStandingY = position.y;
     }
@@ -120,8 +124,22 @@ public class PlayerController25D : MonoBehaviour
         {
             Bounds localBounds;
             if (renderer is SkinnedMeshRenderer skinned && skinned.sharedMesh != null)
-                // Imported culling bounds can be offset from the actual mesh.
-                localBounds = skinned.sharedMesh.bounds;
+            {
+                // Measure actual deformed vertices once, without trusting import bounds.
+                skinned.updateWhenOffscreen = true;
+                Mesh snapshot = new Mesh();
+                try
+                {
+                    skinned.BakeMesh(snapshot, false);
+                    if (snapshot.vertexCount == 0) continue;
+                    snapshot.RecalculateBounds();
+                    localBounds = snapshot.bounds;
+                }
+                finally
+                {
+                    Destroy(snapshot);
+                }
+            }
             else if (renderer is MeshRenderer &&
                      renderer.TryGetComponent(out MeshFilter filter) && filter.sharedMesh != null)
                 localBounds = filter.sharedMesh.bounds;
