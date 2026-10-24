@@ -8,7 +8,7 @@ using UnityEngine.Playables;
 [DisallowMultipleComponent]
 public sealed class DwarfModelVisual : MonoBehaviour
 {
-    [SerializeField, Min(0.1f)] private float visualHeight = 1.6f;
+    [SerializeField, Min(0.1f)] private float visualHeight = 1.8f;
     private bool rebuildRequested;
     private GameObject model;
     private Renderer placeholder;
@@ -20,9 +20,11 @@ public sealed class DwarfModelVisual : MonoBehaviour
     private Material runtimeMaterial;
     private float clipTime;
     private float clipLength;
+    private DwarfPursuer pursuer;
 
     private void Update()
     {
+        if (pursuer == null) pursuer = GetComponent<DwarfPursuer>();
         if (rebuildRequested)
         {
             rebuildRequested = false;
@@ -35,6 +37,8 @@ public sealed class DwarfModelVisual : MonoBehaviour
             retryAt = Time.realtimeSinceStartup + 1f;
             BuildVisual();
         }
+        if (model != null && pursuer != null && Application.IsPlaying(gameObject))
+            SnapMeshFeet(pursuer.GroundY);
         if (run.IsValid() && graph.IsValid())
         {
             if (moving && clipLength > 0f) clipTime = (clipTime + Time.deltaTime) % clipLength;
@@ -44,6 +48,22 @@ public sealed class DwarfModelVisual : MonoBehaviour
     }
 
     public void SetMoving(bool value) { moving = value; }
+
+    private void SnapMeshFeet(float groundY)
+    {
+        Renderer[] renderers = model.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0) return;
+        bool found = false;
+        float lowest = float.PositiveInfinity;
+        foreach (Renderer renderer in renderers)
+        {
+            if (!renderer.enabled) continue;
+            lowest = Mathf.Min(lowest, renderer.bounds.min.y);
+            found = true;
+        }
+        if (found && !float.IsInfinity(lowest))
+            model.transform.position += Vector3.up * Mathf.Clamp(groundY - lowest, -0.5f, 0.5f);
+    }
 
     public void RebuildVisual()
     {
@@ -108,7 +128,14 @@ public sealed class DwarfModelVisual : MonoBehaviour
         model.transform.localScale *= visualHeight / bounds.size.y;
         bounds = renderers[0].bounds;
         foreach (Renderer renderer in renderers) bounds.Encapsulate(renderer.bounds);
-        model.transform.position += anchor.position - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+        CapsuleCollider bodyCollider = GetComponent<CapsuleCollider>();
+        // The chase root is centered above the floor. Align the model's actual
+        // lowest mesh point with the capsule's bottom, not the root's pivot.
+        float groundY = bodyCollider != null
+            ? transform.position.y + bodyCollider.center.y - bodyCollider.height * 0.5f
+            : transform.position.y;
+        model.transform.position += new Vector3(anchor.position.x - bounds.center.x,
+            groundY - bounds.min.y, anchor.position.z - bounds.center.z);
 
         Transform old = transform.Find("Capsule_Placeholder");
         placeholder = old != null ? old.GetComponent<Renderer>() : null;

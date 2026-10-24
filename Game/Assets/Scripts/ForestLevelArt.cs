@@ -95,7 +95,7 @@ public sealed class ForestLevelArt : MonoBehaviour
                 model.localScale = new Vector3(item.dimensions.x / bounds.size.x,
                     item.dimensions.y / bounds.size.y, item.dimensions.z / bounds.size.z);
             else
-                model.localScale = Vector3.one * (item.dimensions.y / bounds.size.y);
+                model.localScale = Vector3.one * (item.dimensions.y * (item.kind == ArtKind.Log ? 1.18f : 1f) / bounds.size.y);
             if (!TryBounds(renderers, out bounds)) { complete = false; continue; }
             if (item.kind == ArtKind.Grass && item.width > 0f && bounds.size.x > 0.0001f)
             {
