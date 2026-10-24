@@ -16,6 +16,6 @@ public static class CutsceneTools
             EditorApplication.ExecuteMenuItem("Window/Sequencing/Timeline");
             return;
         }
-        Debug.LogWarning("Open SampleScene, Scene2_WitchChase or Scene3_TowerEscape first.");
+        Debug.LogWarning("Open SampleScene first. Other levels have no cutscene yet.");
     }
 }

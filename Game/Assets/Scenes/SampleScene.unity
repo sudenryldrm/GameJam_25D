@@ -8563,7 +8563,7 @@ GameObject:
   - component: {fileID: 3800000009}
   - component: {fileID: 3800000010}
   m_Layer: 0
-  m_Name: CM_Cutscene_Wide
+  m_Name: CM_Intro_LeftZoom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8583,8 +8583,8 @@ Transform:
     z: 0
     w: 0.9975640502598242
   m_LocalPosition:
-    x: -40
-    y: 4.8
+    x: -37.5
+    y: 5.5
     z: -20
   m_LocalScale:
     x: 1
@@ -8622,7 +8622,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 60
-    OrthographicSize: 7.0
+    OrthographicSize: 7
     NearClipPlane: 0.1
     FarClipPlane: 100
     Dutch: 0
@@ -8817,10 +8817,11 @@ PlayableDirector:
   m_SceneBindings:
   - key: {fileID: 11400001, guid: c5420233ea325115a3bb052e7cda0716, type: 2}
     value: {fileID: 3800000004}
+  - key: {fileID: 11400005, guid: c5420233ea325115a3bb052e7cda0716, type: 2}
+    value: {fileID: 3800000010}
   m_ExposedReferences:
     m_References:
     - 1cfc433d7c105d94a0bb5e167525e63d: {fileID: 3800000010}
-    - cad90be6e28c5fcb8fd9bc139032df4d: {fileID: 3800000013}
     - b1eccf0e79d85e01b8da44fbbfab7286: {fileID: 3800000007}
 --- !u!114 &3800000003
 MonoBehaviour:

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 
-// Scene 3 uses TowerLevelController's existing intro lifecycle instead.
+// Plays the first level intro, then restores normal gameplay.
 public sealed class LevelIntroCutscene : MonoBehaviour
 {
     [SerializeField] private PlayableDirector director;

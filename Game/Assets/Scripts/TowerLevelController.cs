@@ -48,6 +48,11 @@ public class TowerLevelController : MonoBehaviour
             introCutscene.stopped += OnIntroStopped;
             introCutscene.Play();
         }
+        else
+        {
+            // Until this level gets its own cutscene, enter gameplay immediately.
+            BeginChase();
+        }
     }
 
     private void OnIntroStopped(PlayableDirector director) { BeginChase(); }

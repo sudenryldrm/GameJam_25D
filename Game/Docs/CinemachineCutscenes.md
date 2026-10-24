@@ -1,31 +1,14 @@
-# Cinemachine ve Timeline
+# İlk bölüm kamera girişi
 
-Cinemachine 3.1.7, Unity 6000.3 için manifest'e eklendi. Timeline 1.8.10 zaten projede mevcut. İlk açılışta Package Manager bağımlılıkları indirir ve packages-lock.json dosyasını günceller.
+SampleScene başlangıcındaki giriş toplam 15 saniye sürer. CM_Intro_LeftZoom soldaki başlangıç kadrajından sağa doğru hafifçe kayar ve yavaşça yakınlaşır. Ortografik boyut 7'den 5.8'e iner. Konum (-37.5, 5.5, -20) → (-34, 4.4, -20). Hareket yumuşak başlar ve biter. Son 1 saniyede CM_Gameplay kamerasına karışarak 15. saniyede normal 2.5D kamera, hareket ve takip düzeni geri gelir. E / Space / Esc ile erken atlanabilir.
 
-Her sahnede CutsceneDirector altında üç Cinemachine Camera var:
+Düzenlemek için SampleScene > CutsceneDirector seç ve Window > Sequencing > Timeline aç. Intro01_Forest.playable içinde:
 
-- CM_Gameplay: mevcut 2.5D takip ve bölüm kadrajı.
-- CM_Cutscene_Wide: geniş giriş planı.
-- CM_Cutscene_Close: karakter/yakın plan.
+- Camera Shots: hareketli giriş 0–15 saniye; oyuna dönüş 14–15 saniye.
+- Pan and Zoom: Soldan yavaş zoom klibini seç. Inspector'dan Start Position / End Position, Start Size / End Size ve Motion Ease eğrisini değiştir. Start Size büyüdükçe geniş açı, küçüldükçe yakın plan elde edilir. Hareket gerçek Timeline klibinden hesaplanır, editör scrubbing/preview sırasında da değerlendirilir. Preview kapanınca veya giriş atlanınca kamera ayarları geri alınır.
 
-Main Camera üzerinde Cinemachine Brain bulunur. Sanal kameralar ayrıca görüntü render etmez. Kamera rig'i Main Camera'nın çocuğu değildir; böylece takip döngüsü oluşmaz. CameraFollow25D yalnızca oyun sanal kamerasını hareket ettirir. Kamera gövde/rotasyon pipeline'ı boş bırakılmıştır; sinematik kameralar Transform ve Lens üzerinden serbestçe düzenlenebilir.
+İlk bölümde CM_Gameplay ve ileride kullanılabilecek CM_Cutscene_Close da kalır. Şu an yakın plan kamerasını etkinleştiren klip yoktur.
 
-## Timeline'da düzenleme
+2. ve 3. bölümün giriş Timeline asset'leri, PlayableDirector bileşenleri ve sinematik kameraları kaldırıldı. Bölümler ve mekanikleri korunur. GameplayCameraRig altında yalnızca oyun sanal kamerası bulunur. 3. bölüm artık giriş paneli beklemeden doğrudan oynanışa başlar. İleride TowerLevelController.introCutscene alanına yeni Director bağlanabilir.
 
-1. SampleScene, Scene2_WitchChase veya Scene3_TowerEscape sahnesini aç.
-2. Hierarchy'den CutsceneDirector seç.
-3. Window > Sequencing > Timeline aç. Alternatif: GameJam > Cutscenes > Open Current Scene Timeline.
-4. Camera Shots track'inde Wide, Close ve Gameplay kliplerini düzenle. Süreleri kenarlarından uzat/kısalt. Geçiş için klipleri üst üste getir.
-5. Hierarchy'den geniş veya yakın kamerayı seçerek konumunu ve Lens > Orthographic Size değerini değiştir. Timeline preview açıkken Game penceresinde görüntüyü kontrol et.
-6. Hareket için kameraya Animation Track ekleyip kayıt yap. Yeni Animation veya Audio track ekleyerek karakter animasyonlarını ve sesleri bağlayabilirsin. Bu taslakta karakter animasyonu/diyalog eklenmedi.
-7. Sahneyi ve Timeline asset'ini kaydet.
-
-Assets/Timelines altında Intro01_Forest.playable, Intro02_Witch.playable ve Intro03_Prince.playable bulunur. Her taslak 5.2 saniye: geniş plan 0–2.4, yakın plan 2–4.4, oyun kamerası 4–5.2. Planlar arasında 0.4 saniye örtüşme bulunur. Asset'ler gerçek Timeline/Cinemachine track ve shot nesneleridir; çalışma anında yeniden üretilmezler. Kamera ve Brain bağları PlayableDirector üzerinde kayıtlıdır.
-
-Girişler sahne başında otomatik oynar. Böylece cadı evinden 2. bölüme geçince cadı girişi, kule kapısından 3. bölüme geçince prens girişi görülür. E, Space veya Esc ile atlanabilir. Giriş sırasında oyuncu ve kovalamaca durur; Timeline ve kamera unscaled zamanda çalışır. Bitişte/atlamada oyun kontrolü ve zaman geri gelir. Üçüncü sahnede bu akışı mevcut TowerLevelController yönetir. İlk iki sahnede LevelIntroCutscene kullanılır. Kontrol noktası respawn'ları girişi yeniden başlatmaz. Yalnızca sahne yeniden açıldığında giriş tekrar oynar. İlk bölümde otomatik girişi kapatmak için LevelIntroCutscene > Play On Start işaretini kaldır.
-
-## Doğrulama
-
-Unity Editor bu ortamda kurulu değil; gerçek import, derleme, editör preview ve oynanış test edilmedi. YAML referansları, prefab Brain bağlantısı, exposed camera referansları, 3 planın zamanları ve sahne kapsamı programatik kontrol edilir. Unity'de her sahnede doğal bitişi, E/Space/Esc ile atlamayı, R ile yeniden başlamayı, kapılardan geçişi ve Tower checkpoint dönüşünü kontrol et. Sonrasında Timeline'a eklediğin aktör animasyonları mevcut hareket/animasyon sistemiyle ayrıca denenmelidir.
-
-Referanslar: https://docs.unity.com/en-us/engine/6000.3/manual/packages-list/packages-all/pack-safe/com-unity-cinemachine ve https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/concept-timeline.html
+Unity editörü bu ortamda yok. Dosya referansları, 15 saniyelik süre, hareket eğrisi, son kamera, korunan fizik/nesneler ve diğer sahnelerden kaldırılan bağlantılar programatik kontrol edilir. Unity'de kamera hareketini, Timeline preview'ı, doğal bitişi, atlamayı ve sonraki bölümlerin doğrudan başlamasını ayrıca kontrol et.
