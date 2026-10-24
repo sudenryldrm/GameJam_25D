@@ -13,6 +13,12 @@ public sealed class ItemAppleVisual : MonoBehaviour
     [SerializeField] private float bottomOffset = -0.4f;
     private bool needsFit;
     private float retryAt;
+    [SerializeField, Min(0f)] private float bobAmplitude = 0.035f;
+    [SerializeField, Min(0f)] private float bobFrequency = 2.2f;
+    [SerializeField, Min(0f)] private float tiltDegrees = 4f;
+    private Vector3 fittedLocalPosition;
+    private Quaternion fittedLocalRotation;
+    private bool fitted;
 
     private void OnEnable() { RequestFit(); }
     private void OnValidate() { RequestFit(); }
@@ -22,9 +28,18 @@ public sealed class ItemAppleVisual : MonoBehaviour
 
     private void Update()
     {
-        if (!needsFit || Time.realtimeSinceStartup < retryAt) return;
-        needsFit = !FitModel();
-        retryAt = Time.realtimeSinceStartup + 1f;
+        if (needsFit && Time.realtimeSinceStartup >= retryAt)
+        {
+            needsFit = !FitModel();
+            retryAt = Time.realtimeSinceStartup + 1f;
+        }
+        if (fitted && model != null)
+        {
+            float t = Application.isPlaying ? Time.time : Time.realtimeSinceStartup;
+            model.localPosition = fittedLocalPosition + Vector3.up * (Mathf.Sin(t * bobFrequency) * bobAmplitude);
+            model.localRotation = fittedLocalRotation *
+                Quaternion.Euler(0f, 0f, Mathf.Sin(t * bobFrequency * 0.72f) * tiltDegrees);
+        }
     }
 
     private bool FitModel()
@@ -53,6 +68,9 @@ public sealed class ItemAppleVisual : MonoBehaviour
         if (placeholders != null)
             foreach (Renderer placeholder in placeholders)
                 if (placeholder != null) placeholder.enabled = false;
+        fittedLocalPosition = model.localPosition;
+        fittedLocalRotation = model.localRotation;
+        fitted = true;
         return true;
     }
 
