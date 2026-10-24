@@ -21,3 +21,14 @@ on either the FBX root or its child mesh and applies in both forest scenes.
 Scene1's last two optional upper platforms and their floating decorations have
 been removed; the continuous ground, mask route and four earlier platforms remain.
 Unity appearance/play-mode verification is still pending.
+
+## Scene1 grass rows
+
+Scene1 now has 178 shared Grass.fbx decorations (formerly 18): two 67-tuft
+rows across the main ground from X=-49.5 to X=49.5 and two rows on each of
+the four upper platforms. Tufts repeat heights 0.85, 0.35, 0.85, 0.85, 0.85,
+0.35. Spacing is at most 1.5 units, with 0.4-unit edge margins on the upper
+platforms. The central player lane at Z=-4 remains open. No decoration colliders
+are added; platform collisions, the mask, dwarf followers, and other scenes are
+unchanged. Scene references, pattern, row extents and retained gameplay objects
+were checked; Unity visual/play-mode verification remains pending.
