@@ -12,7 +12,7 @@ The existing 3D art style is retained; this is not a traced copy of the 2D image
   beyond the playable ends. There are 38 broadleaf trees and 24 existing pines.
   Distant foliage is pale; nearer foliage becomes darker. Far and framing trees
   use complete silhouettes, while nearer trees retain brown trunks.
-- 59 flower clusters alternate cream and pink petals with yellow centres and
+- 53 flower clusters alternate cream and pink petals with yellow centres and
   green stems/leaves. They decorate the main ground and the four upper platforms.
 
 ReferenceFlowers.obj is derived from the existing LevelKit/flowers-tall.fbx;
@@ -38,3 +38,9 @@ Validation: unique scene IDs, removal references, decoration-parent bindings,
 overlapping row widths, mesh face groups and model orientation were checked.
 The two derived models were rendered in a geometry preview. Unity compilation,
 scene import, gameplay visibility and frame rate still need editor verification.
+
+Readability pass: scene1 ground rocks are now 0.95–1.35 units high, its raised
+rock is 0.72, and logs are 1.6. Scene2 rocks are 0.65/1.05 and logs are 1.2.
+Rocks sit slightly forward of the back vegetation bands to expose their silhouettes.
+Six flower clusters (about 10%) were removed while preserving cream/pink variety.
+No decorative colliders, camera or lighting changes were introduced by this pass.

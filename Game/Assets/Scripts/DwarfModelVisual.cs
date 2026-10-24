@@ -8,6 +8,8 @@ using UnityEngine.Playables;
 [DisallowMultipleComponent]
 public sealed class DwarfModelVisual : MonoBehaviour
 {
+    [SerializeField, Min(0.1f)] private float visualHeight = 1.6f;
+    private bool rebuildRequested;
     private GameObject model;
     private Renderer placeholder;
     private PlayableGraph graph;
@@ -21,6 +23,11 @@ public sealed class DwarfModelVisual : MonoBehaviour
 
     private void Update()
     {
+        if (rebuildRequested)
+        {
+            rebuildRequested = false;
+            RebuildVisual();
+        }
         // Also handle entering play mode with domain/scene reload disabled.
         if (model != null && builtForPlay != Application.IsPlaying(gameObject)) ReleaseVisual();
         if (model == null && Time.realtimeSinceStartup >= retryAt)
@@ -97,8 +104,8 @@ public sealed class DwarfModelVisual : MonoBehaviour
         }
         if (!hasBounds || bounds.size.y < 0.001f) { ReleaseVisual(); return; }
 
-        // Fit the art to the existing 1.3-unit collider and put its feet on the anchor.
-        model.transform.localScale *= 1.3f / bounds.size.y;
+        // Enlarge the art while preserving its grounded feet and chase physics.
+        model.transform.localScale *= visualHeight / bounds.size.y;
         bounds = renderers[0].bounds;
         foreach (Renderer renderer in renderers) bounds.Encapsulate(renderer.bounds);
         model.transform.position += anchor.position - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
@@ -135,6 +142,7 @@ public sealed class DwarfModelVisual : MonoBehaviour
     }
 
     private void OnEnable() { RebuildVisual(); }
+    private void OnValidate() { rebuildRequested = true; }
     private void OnDisable() { ReleaseVisual(); }
 
     private void ReleaseVisual()

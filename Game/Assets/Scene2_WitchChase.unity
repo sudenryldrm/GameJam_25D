@@ -4633,14 +4633,14 @@ MonoBehaviour:
   - model: {fileID: 3600000038}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 3.58, y: 0.48, z: 2.2}
-    dimensions: {x: 1, y: 0.65, z: 1}
+    surfaceCenter: {x: 3.58, y: 0.48, z: 1.5}
+    dimensions: {x: 1, y: 1.05, z: 1}
     yaw: 0
   - model: {fileID: 3600000040}
     kind: 4
     meshNames: []
     surfaceCenter: {x: 1.82, y: 0.49, z: 1.9}
-    dimensions: {x: 1, y: 0.72, z: 1}
+    dimensions: {x: 1, y: 1.2, z: 1}
     yaw: 70
   - model: {fileID: 3600000042}
     kind: 2
@@ -4657,8 +4657,8 @@ MonoBehaviour:
   - model: {fileID: 3600000046}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 11.57, y: 4.68, z: 2.2}
-    dimensions: {x: 1, y: 0.4, z: 1}
+    surfaceCenter: {x: 11.57, y: 4.68, z: 1.5}
+    dimensions: {x: 1, y: 0.65, z: 1}
     yaw: 47
   - model: {fileID: 3600000048}
     kind: 1
@@ -4681,8 +4681,8 @@ MonoBehaviour:
   - model: {fileID: 3600000054}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 14.68, y: 0.48, z: 2.2}
-    dimensions: {x: 1, y: 0.65, z: 1}
+    surfaceCenter: {x: 14.68, y: 0.48, z: 1.5}
+    dimensions: {x: 1, y: 1.05, z: 1}
     yaw: 94
   - model: {fileID: 3600000056}
     kind: 2
@@ -4699,8 +4699,8 @@ MonoBehaviour:
   - model: {fileID: 3600000060}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 20.12, y: 2.08, z: 2.2}
-    dimensions: {x: 1, y: 0.4, z: 1}
+    surfaceCenter: {x: 20.12, y: 2.08, z: 1.5}
+    dimensions: {x: 1, y: 0.65, z: 1}
     yaw: 141
   - model: {fileID: 3600000062}
     kind: 1
@@ -4723,14 +4723,14 @@ MonoBehaviour:
   - model: {fileID: 3600000068}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 25.46, y: 0.48, z: 2.2}
-    dimensions: {x: 1, y: 0.65, z: 1}
+    surfaceCenter: {x: 25.46, y: 0.48, z: 1.5}
+    dimensions: {x: 1, y: 1.05, z: 1}
     yaw: 188
   - model: {fileID: 3600000070}
     kind: 4
     meshNames: []
     surfaceCenter: {x: 24.34, y: 0.49, z: 1.9}
-    dimensions: {x: 1, y: 0.72, z: 1}
+    dimensions: {x: 1, y: 1.2, z: 1}
     yaw: 118
   - model: {fileID: 3600000072}
     kind: 1
@@ -4759,8 +4759,8 @@ MonoBehaviour:
   - model: {fileID: 3600000080}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 35.58, y: 0.48, z: 2.2}
-    dimensions: {x: 1, y: 0.65, z: 1}
+    surfaceCenter: {x: 35.58, y: 0.48, z: 1.5}
+    dimensions: {x: 1, y: 1.05, z: 1}
     yaw: 235
   - model: {fileID: 3600000082}
     kind: 2
@@ -4777,8 +4777,8 @@ MonoBehaviour:
   - model: {fileID: 3600000086}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 43.57, y: 4.68, z: 2.2}
-    dimensions: {x: 1, y: 0.4, z: 1}
+    surfaceCenter: {x: 43.57, y: 4.68, z: 1.5}
+    dimensions: {x: 1, y: 0.65, z: 1}
     yaw: 282
   - model: {fileID: 3600000088}
     kind: 1
@@ -4801,14 +4801,14 @@ MonoBehaviour:
   - model: {fileID: 3600000094}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 46.68, y: 0.48, z: 2.2}
-    dimensions: {x: 1, y: 0.65, z: 1}
+    surfaceCenter: {x: 46.68, y: 0.48, z: 1.5}
+    dimensions: {x: 1, y: 1.05, z: 1}
     yaw: 329
   - model: {fileID: 3600000096}
     kind: 4
     meshNames: []
     surfaceCenter: {x: 45.72, y: 0.49, z: 1.9}
-    dimensions: {x: 1, y: 0.72, z: 1}
+    dimensions: {x: 1, y: 1.2, z: 1}
     yaw: 154
   - model: {fileID: 3600000098}
     kind: 2
@@ -4825,8 +4825,8 @@ MonoBehaviour:
   - model: {fileID: 3600000102}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 52.12, y: 2.08, z: 2.2}
-    dimensions: {x: 1, y: 0.4, z: 1}
+    surfaceCenter: {x: 52.12, y: 2.08, z: 1.5}
+    dimensions: {x: 1, y: 0.65, z: 1}
     yaw: 376
   - model: {fileID: 3600000104}
     kind: 1
@@ -4849,8 +4849,8 @@ MonoBehaviour:
   - model: {fileID: 3600000110}
     kind: 3
     meshNames: []
-    surfaceCenter: {x: 57.46, y: 0.48, z: 2.2}
-    dimensions: {x: 1, y: 0.65, z: 1}
+    surfaceCenter: {x: 57.46, y: 0.48, z: 1.5}
+    dimensions: {x: 1, y: 1.05, z: 1}
     yaw: 423
   earth: {fileID: 2100000, guid: 1d800a7be5c6577186a2b26710cdf83a, type: 2}
   turf: {fileID: 2100000, guid: 884324032d2756afbc77bc36afafa83e, type: 2}
