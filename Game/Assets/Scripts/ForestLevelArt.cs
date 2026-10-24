@@ -143,7 +143,8 @@ public sealed class ForestLevelArt : MonoBehaviour
             switch (kind)
             {
                 case ArtKind.Platform: materials[slot] = renderer.name.StartsWith("grassGround") ? turf : earth; break;
-                case ArtKind.Pine: materials[slot] = silhouette && tint != null ? tint :\n                    renderer.name.StartsWith("TreeLeaves") ? (tint != null ? tint : pine) : wood; break;
+                case ArtKind.Pine: materials[slot] = silhouette && tint != null ? tint :
+                    renderer.name.StartsWith("TreeLeaves") ? (tint != null ? tint : pine) : wood; break;
                 case ArtKind.Grass: materials[slot] = tint != null ? tint : grass; break;
                 case ArtKind.Rock: materials[slot] = rock; break;
                 case ArtKind.Flower:

@@ -28,10 +28,11 @@ original behavior for other scenes. New grass rows use zero yaw for width fittin
 Reference materials enable GPU instancing. Decorative renderers do not cast
 shadows, generate colliders, or perform mesh fitting after layout succeeds.
 
-All platform colliders, spawns, masks/apple visuals, followers, exits, Timeline
-and camera bindings are preserved. Only the forest layout component and its two
-decoration child lists change among retained scene objects. Scene2 and scene3
-are untouched; their layout continues to use its existing settings.
+All platform top surfaces, spawns, masks/apple visuals, followers, exits, Timeline
+and camera bindings are preserved. See StonePlatformDetail.md for the later
+stone-body depth and collider-alignment correction. Only the forest layout component and its two
+decoration child lists change among retained scene objects. Scene3 is unchanged; Scene2 retains its original layout with the later stone-body
+depth correction described in StonePlatformDetail.md.
 
 Validation: unique scene IDs, removal references, decoration-parent bindings,
 overlapping row widths, mesh face groups and model orientation were checked.

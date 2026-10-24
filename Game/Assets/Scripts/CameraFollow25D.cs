@@ -44,6 +44,10 @@ public class CameraFollow25D : MonoBehaviour
             offset = new Vector3(0f, 2.2f, -20f);
             switch (gameObject.scene.name)
             {
+                case "SampleScene":
+                    viewSize = 6.6f;
+                    lockHorizontalPosition = false;
+                    break;
                 case "Scene2_WitchChase":
                     viewSize = 6.5f; minimumX = -5f; maximumX = 59f;
                     lookAhead = 1.8f; verticalDeadZone = 0.8f;
@@ -73,7 +77,9 @@ public class CameraFollow25D : MonoBehaviour
             view.nearClipPlane = 0.1f;
             view.farClipPlane = 100f;
         }
-        FollowTransform.rotation = Quaternion.Euler(8f, 0f, 0f);
+        // A gentler forest angle shows the stone faces rather than mostly grass.
+        float pitch = useSceneProfile && gameObject.scene.name == "SampleScene" ? 6f : 8f;
+        FollowTransform.rotation = Quaternion.Euler(pitch, 0f, 0f);
         configured = true;
         UpdateViewSize();
         SnapToTarget();

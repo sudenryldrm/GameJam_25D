@@ -2680,8 +2680,8 @@ Transform:
   m_GameObject: {fileID: 3400000084}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.325, z: 0}
-  m_LocalScale: {x: 7, y: 0.65, z: 6}
+  m_LocalPosition: {x: 0, y: -0.525, z: 0}
+  m_LocalScale: {x: 7, y: 1.05, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3400000083}
@@ -2947,8 +2947,8 @@ Transform:
   m_GameObject: {fileID: 3400000097}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.325, z: 0}
-  m_LocalScale: {x: 6, y: 0.65, z: 6}
+  m_LocalPosition: {x: 0, y: -1.2, z: 0}
+  m_LocalScale: {x: 6, y: 2.4, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3400000096}
@@ -3214,8 +3214,8 @@ Transform:
   m_GameObject: {fileID: 3400000110}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.325, z: 0}
-  m_LocalScale: {x: 7, y: 0.65, z: 6}
+  m_LocalPosition: {x: 0, y: -1.4, z: 0}
+  m_LocalScale: {x: 7, y: 2.8, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3400000109}
@@ -3481,8 +3481,8 @@ Transform:
   m_GameObject: {fileID: 3400000123}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.325, z: 0}
-  m_LocalScale: {x: 6, y: 0.65, z: 6}
+  m_LocalPosition: {x: 0, y: -1.2, z: 0}
+  m_LocalScale: {x: 6, y: 2.4, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3400000122}
@@ -4049,7 +4049,7 @@ MonoBehaviour:
     - grassGround.001
     - tasDuvar.001
     surfaceCenter: {x: -29, y: 3.7, z: -4}
-    dimensions: {x: 7, y: 0.65, z: 6}
+    dimensions: {x: 7, y: 1.05, z: 6}
     yaw: 0
   - model: {fileID: 3600000018}
     kind: 0
@@ -4057,7 +4057,7 @@ MonoBehaviour:
     - grassGround.001
     - tasDuvar.001
     surfaceCenter: {x: -19, y: 5.8, z: -4}
-    dimensions: {x: 6, y: 0.65, z: 6}
+    dimensions: {x: 6, y: 2.4, z: 6}
     yaw: 0
   - model: {fileID: 3600000020}
     kind: 0
@@ -4065,7 +4065,7 @@ MonoBehaviour:
     - grassGround.001
     - tasDuvar.001
     surfaceCenter: {x: -8, y: 7.6, z: -4}
-    dimensions: {x: 7, y: 0.65, z: 6}
+    dimensions: {x: 7, y: 2.8, z: 6}
     yaw: 0
   - model: {fileID: 3600000022}
     kind: 0
@@ -4073,7 +4073,7 @@ MonoBehaviour:
     - grassGround.001
     - tasDuvar.001
     surfaceCenter: {x: 4, y: 6, z: -4}
-    dimensions: {x: 6, y: 0.65, z: 6}
+    dimensions: {x: 6, y: 2.4, z: 6}
     yaw: 0
   - model: {fileID: 3600000084}
     kind: 3
