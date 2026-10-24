@@ -15,6 +15,9 @@ public sealed class DwarfModelVisual : MonoBehaviour
     private bool moving;
     private float retryAt;
     private bool builtForPlay;
+    private Material runtimeMaterial;
+    private float clipTime;
+    private float clipLength;
 
     private void Update()
     {
@@ -25,17 +28,51 @@ public sealed class DwarfModelVisual : MonoBehaviour
             retryAt = Time.realtimeSinceStartup + 1f;
             BuildVisual();
         }
-        if (run.IsValid()) run.SetSpeed(moving ? 1d : 0d);
+        if (run.IsValid() && graph.IsValid())
+        {
+            if (moving && clipLength > 0f) clipTime = (clipTime + Time.deltaTime) % clipLength;
+            run.SetTime(clipTime);
+            graph.Evaluate(0f);
+        }
     }
 
     public void SetMoving(bool value) { moving = value; }
+
+    public void RebuildVisual()
+    {
+        ReleaseVisual();
+        // DontSave children can outlive nonserialized C# fields after a script reload.
+        Transform anchor = transform.Find("Art_Anchor");
+        if (anchor != null)
+            for (int i = anchor.childCount - 1; i >= 0; i--)
+                if (anchor.GetChild(i).name == "Gnome_Run_Visual")
+                {
+                    GameObject stale = anchor.GetChild(i).gameObject;
+                    stale.SetActive(false);
+                    if (Application.IsPlaying(gameObject)) Destroy(stale);
+                    else DestroyImmediate(stale);
+                }
+        retryAt = 0f;
+    }
 
     private void BuildVisual()
     {
         GameObject source = Resources.Load<GameObject>("Dwarfs/GnomeRun");
         Material material = Resources.Load<Material>("Dwarfs/Gnome");
         Transform anchor = transform.Find("Art_Anchor");
-        if (source == null || material == null || anchor == null) return;
+        Texture2D diffuse = Resources.Load<Texture2D>("Dwarfs/GnomeDiffuse");
+        Texture2D normal = Resources.Load<Texture2D>("Dwarfs/GnomeNormal");
+        if (source == null || material == null || diffuse == null || anchor == null) return;
+        // Resolve by asset path as well as GUID, so regenerated texture metas cannot
+        // leave a permanently white cached visual after first import.
+        runtimeMaterial = new Material(material) { hideFlags = HideFlags.DontSave };
+        if (runtimeMaterial.HasProperty("_BaseMap")) runtimeMaterial.SetTexture("_BaseMap", diffuse);
+        if (runtimeMaterial.HasProperty("_MainTex")) runtimeMaterial.SetTexture("_MainTex", diffuse);
+        if (normal != null && runtimeMaterial.HasProperty("_BumpMap"))
+        {
+            runtimeMaterial.SetTexture("_BumpMap", normal);
+            runtimeMaterial.EnableKeyword("_NORMALMAP");
+        }
         builtForPlay = Application.IsPlaying(gameObject);
 
         model = Instantiate(source, anchor, false);
@@ -52,7 +89,8 @@ public sealed class DwarfModelVisual : MonoBehaviour
         foreach (Renderer renderer in renderers)
         {
             Material[] slots = renderer.sharedMaterials;
-            for (int i = 0; i < slots.Length; i++) slots[i] = material;
+            if (slots.Length == 0) slots = new Material[1];
+            for (int i = 0; i < slots.Length; i++) slots[i] = runtimeMaterial;
             renderer.sharedMaterials = slots;
             if (!hasBounds) { bounds = renderer.bounds; hasBounds = true; }
             else bounds.Encapsulate(renderer.bounds);
@@ -70,12 +108,13 @@ public sealed class DwarfModelVisual : MonoBehaviour
         if (placeholder != null) placeholder.enabled = false;
 
         if (!Application.IsPlaying(gameObject)) return;
-        AnimationClip clip = null;
-        foreach (AnimationClip candidate in Resources.LoadAll<AnimationClip>("Dwarfs/GnomeRun"))
+        AnimationClip clip = Resources.Load<AnimationClip>("Dwarfs/GnomeRunAnimation");
+        if (clip == null) foreach (AnimationClip candidate in Resources.LoadAll<AnimationClip>("Dwarfs/GnomeRun"))
             if (!candidate.name.StartsWith("__preview__")) { clip = candidate; break; }
         if (clip == null)
         {
             Debug.LogError("Gnome run animation was not imported.", this);
+            ReleaseVisual();
             return;
         }
         Animator animator = model.GetComponent<Animator>();
@@ -83,16 +122,19 @@ public sealed class DwarfModelVisual : MonoBehaviour
         animator.applyRootMotion = false;
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         graph = PlayableGraph.Create("Dwarf Run");
-        graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
+        graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+        clipLength = clip.length;
+        clipTime = 0f;
         AnimationPlayableOutput output = AnimationPlayableOutput.Create(graph, "Run", animator);
         run = AnimationClipPlayable.Create(graph, clip);
         run.SetApplyFootIK(false);
-        run.SetSpeed(moving ? 1d : 0d);
+        run.SetSpeed(0d);
         output.SetSourcePlayable(run);
         graph.Play();
+        graph.Evaluate(0f);
     }
 
-    private void OnEnable() { retryAt = 0f; }
+    private void OnEnable() { RebuildVisual(); }
     private void OnDisable() { ReleaseVisual(); }
 
     private void ReleaseVisual()
@@ -105,5 +147,12 @@ public sealed class DwarfModelVisual : MonoBehaviour
             else DestroyImmediate(model);
         }
         model = null;
+        if (runtimeMaterial != null)
+        {
+            if (Application.IsPlaying(gameObject)) Destroy(runtimeMaterial);
+            else DestroyImmediate(runtimeMaterial);
+        }
+        runtimeMaterial = null;
     }
 }
+

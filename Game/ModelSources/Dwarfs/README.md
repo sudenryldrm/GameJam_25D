@@ -21,3 +21,14 @@ Validation: seven scene component bindings and unique scene object IDs checked;
 all reconstructed source bytes match the uploaded originals. Unity is not
 installed in the editing environment, so import, visual alignment and play mode
 still require checking in the Unity editor.
+
+## Repair white or frozen dwarfs
+
+After pulling, stop Play mode and let Unity finish compiling. The importer now
+reimports the textures, reconnects the material using actual imported assets,
+imports the real FBX take range, and creates GnomeRunAnimation.anim for runtime
+playback. Existing generated visuals are rebuilt after repair or script reload.
+If needed, run Tools > Dwarfs > Repair Materials and Run Animation, then enter Play.
+A successful repair prints a Dwarfs confirmation to the Console; errors include
+the missing source, texture, or animation details. Generated source checksums
+are still verified before importing. Unity play-mode verification remains pending.
