@@ -34,6 +34,8 @@ public class PlayerController25D : MonoBehaviour
 
     [HideInInspector] public bool isInteracting = false;
 
+    public event System.Action Respawned;
+
     private Vector3 spawnPosition;
     private Rigidbody rb;
     private CapsuleCollider col;
@@ -274,7 +276,7 @@ public class PlayerController25D : MonoBehaviour
         // Zemin kontrolü
         Vector3 rayStart = transform.position + col.center;
         float rayLength = (col.height / 2f) + 0.25f;
-        isGrounded = Physics.Raycast(rayStart, Vector3.down, rayLength);
+        isGrounded = Physics.Raycast(rayStart, Vector3.down, rayLength, ~0, QueryTriggerInteraction.Ignore);
 
         // Hız seçimi
         float targetSpeed = isRunning ? runSpeed : walkSpeed;
@@ -297,11 +299,25 @@ public class PlayerController25D : MonoBehaviour
 
         if (transform.position.y < -10f)
         {
-            rb.linearVelocity = Vector3.zero;
-            // Keep this scene's starting lane when returning after a fall.
-            rb.position = spawnPosition;
-            currentVelocityX = 0f;
+            Respawn();
         }
+    }
+
+    public void Respawn()
+    {
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        rb.position = spawnPosition;
+        horizontalInput = 0f;
+        currentVelocityX = 0f;
+        isGrounded = false;
+        isRunning = false;
+        isJumpPressed = false;
+        isInteracting = false;
+        coyoteCounter = 0f;
+        jumpBufferCounter = 0f;
+        jumpsRemaining = maxJumps;
+        Respawned?.Invoke();
     }
 
     private void UpdateAnimations()

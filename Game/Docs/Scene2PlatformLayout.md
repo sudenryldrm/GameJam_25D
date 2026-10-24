@@ -11,9 +11,9 @@ Referanstaki düzen iki kez yan yana tekrarlandı. Oynanış X/Y düzleminde, ka
 - `Surface_Guide`: üst yüzeyi gösteren renkli kılavuz; çarpışması yoktur.
 - `Art_Anchor`: modelinizi burada, platformun üstüne oturtun; görünümü tamamlayınca iki blokaj Mesh Renderer'ını gizleyebilirsiniz. BoxCollider'ı koruyun.
 - Alt boşluklar 4 birimdir. Modüller X=27'de düz bir zeminle birleşir.
-- Cutscene ve kovalamaca bu değişikliğe eklenmedi; mevcut WitchBoss nesnesi daha sonra kullanılmak üzere kapalı tutuldu.
-- `Future_Cutscene_Anchor` ve `Future_Exit_Anchor` yalnızca yer işaretidir; sahne yüklemez.
-- Düşünce mevcut karakter kodu başlangıca döndürür; boşluklarda ek zarar sistemi yoktur.
+- Cutscene daha sonra eklenecek. Kovalamaca, geçici mor cadı ve kırmızı elmalarla aktiftir; ayrıntılar Scene2Mechanics.md dosyasındadır.
+- `Future_Cutscene_Anchor` yer işaretidir. Çıkış noktası artık `Chase_Finish` olarak bölüm sonu panelini açar; henüz yeni bir sahne yüklemez.
+- Düşünce başlangıca dönülür; cadı ve geçici tehlikeler de sıfırlanır. Zehirli elma/bulut çarpması aynı dönüşü kullanır.
 
 ## Bir modülün ölçüleri
 
@@ -32,3 +32,4 @@ X koordinatları Module_01 için verilmiştir. Module_02'de X'e 32 ekleyin.
 SampleScene'deki ev geçişinden bu sahneye gelinir. Başlangıç X=-2, Y=2, Z=0'dır. A/D ile hareket, Shift ile koşma, Space ile zıplama / çift zıplama mevcut karakter ayarlarını kullanır.
 
 Bu yerleşimde çarpışma hacimleri ve sıçrama mesafeleri sayısal olarak kontrol edilmiştir. Unity editöründe oynanabilirlik ve kamera görünümü ayrıca doğrulanmalıdır.
+

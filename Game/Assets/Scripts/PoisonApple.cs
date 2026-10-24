@@ -1,45 +1,49 @@
-
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(SphereCollider))]
 public class PoisonApple : MonoBehaviour
 {
-    [Header("Yok Olma Süresi")]
-    [SerializeField] private float lifeTime = 5f;
-
+    [SerializeField] private float lifeTime = 8f;
     private Rigidbody rb;
+    private Material cloudMaterial;
+    private bool impacted;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezePositionZ; // 2.5D derinlikten sapmasın
-        Destroy(gameObject, lifeTime); // Bir yere çarpmazsa 5 saniye sonra kendini siler
+        rb.constraints = RigidbodyConstraints.FreezePositionZ;
+        rb.useGravity = true;
+        rb.linearDamping = 0f;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        Destroy(gameObject, lifeTime);
     }
 
-    public void Launch(Vector3 velocity)
+    public void Launch(Vector3 velocity, Material poisonMaterial = null)
     {
+        cloudMaterial = poisonMaterial;
         rb.linearVelocity = velocity;
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Prenses ile çarpışırsa
-        if (collision.gameObject.CompareTag("Player"))
+        if (impacted) return;
+        if (collision.collider.GetComponentInParent<PoisonApple>() != null) return;
+        impacted = true;
+        PlayerController25D player = collision.collider.GetComponentInParent<PlayerController25D>();
+        if (player != null)
         {
-            Debug.LogWarning("Zehirli elma prensese çarptı! Bölüm başa sarıyor!");
-            
-            PlayerController25D player = collision.gameObject.GetComponent<PlayerController25D>();
-            if (player != null)
-            {
-                // Prensesi 2. sahnenin başlangıç noktasına geri ışınla
-                player.transform.position = new Vector3(0f, 3f, 0f);
-            }
-            Destroy(gameObject);
+            if (Scene2ChaseController.Instance != null)
+                Scene2ChaseController.Instance.HitPlayer(player);
+            else player.Respawn();
         }
-        // Zemine veya platforma çarparsa parçalanıp yok olur
         else
         {
-            Destroy(gameObject, 0.1f);
+            Vector3 point = transform.position;
+            if (collision.contactCount > 0)
+                point = collision.GetContact(0).point + collision.GetContact(0).normal * 0.15f;
+            PoisonCloud.Spawn(point, cloudMaterial);
         }
+        gameObject.SetActive(false);
+        Destroy(gameObject);
     }
 }
