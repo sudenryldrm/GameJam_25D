@@ -19,9 +19,9 @@ public class DwarfChaseGroup : MonoBehaviour
     private Rigidbody playerBody;
     private DwarfPursuer[] dwarfs;
     [Header("Cüce Baltaları")]
-    [SerializeField] private float firstAxeDelay = 4.5f;
-    [SerializeField] private float minimumAxeInterval = 4f;
-    [SerializeField] private float maximumAxeInterval = 6f;
+    [SerializeField] private float firstAxeDelay = 2f;
+    [SerializeField] private float minimumAxeInterval = 2.5f;
+    [SerializeField] private float maximumAxeInterval = 3.5f;
     private float axeThrowTimer;
     public bool Ready { get; private set; }
     public bool IsFollowing => Ready && player != null && !player.isInteracting && Time.timeScale > 0f;
@@ -62,7 +62,7 @@ public class DwarfChaseGroup : MonoBehaviour
 
     private void Update()
     {
-        if (!IsFollowing || dwarfs == null || dwarfs.Length == 0) return;
+        if (player == null || player.isInteracting || Time.timeScale <= 0f || dwarfs == null || dwarfs.Length == 0) return;
         axeThrowTimer -= Time.deltaTime;
         if (axeThrowTimer > 0f) return;
 
@@ -79,7 +79,8 @@ public class DwarfChaseGroup : MonoBehaviour
                 destination.x += Mathf.Clamp(playerBody.linearVelocity.x * flightTime, -4f, 4f);
                 destination.y += Mathf.Clamp(playerBody.linearVelocity.y * flightTime * 0.35f, -1.5f, 1.5f);
             }
-            DwarfAxeProjectile.Spawn(origin, destination, flightTime);
+            DwarfAxeProjectile.Spawn(origin, destination, flightTime, player);
+            Debug.Log("Dwarf axe thrown at player.", thrower);
         }
         axeThrowTimer = Random.Range(Mathf.Max(1f, minimumAxeInterval),
             Mathf.Max(minimumAxeInterval, maximumAxeInterval));
