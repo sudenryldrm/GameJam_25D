@@ -1,10 +1,13 @@
-# Dwarf axe visual asset
+# Dwarf axe model and projectile
 
-## Selected ready-made model
+## Ready-made coloured FBX selected
 
-- **Harvest Hearth Harvest Wood Axe** — https://3dassets.dev/assets/harvest-hearth-harvest-wood-axe
-- Direct GLB: https://cdn.3dassets.dev/assets/68/v1/model.glb
-- Licence: **CC0 1.0** (free for commercial and personal use; attribution not required).
-- Stylized, coloured wood-and-steel axe; 644 triangles.
+- **Low Poly Axe — Joseph Riches:** https://josephriches.itch.io/low-poly-axe
+- Download package: `Low Poly Axe Model.zip` (FBX model and TIF texture).
+- Licence: **CC0 1.0 Universal**; free for personal and commercial projects, attribution appreciated but not required.
 
-The current `DwarfAxeProjectile.cs` builds a small coloured low-poly axe at runtime, so the throw behaviour works without an additional Unity GLB importer. The selected external model has been identified but is **not bundled in this commit**; once the GLB is imported into the Unity project, the projectile visual can be swapped to that asset while retaining the same hit behaviour.
+The external package is selected as the source model, but its FBX/texture binaries are not included in this repository yet because the download package is hosted on itch.io. Import the FBX and texture into Unity to replace the fallback visual.
+
+## Current behaviour
+
+`Game/Assets/Scripts/DwarfAxeProjectile.cs` spawns a coloured low-poly axe fallback at runtime so the throwing mechanic does not depend on the FBX import. The projectile uses a trigger plus proximity hit detection, aims at the player, spins while flying, and calls the same respawn flow as the witch hazard. Dwarfs start throwing after 2 seconds and repeat every 2.5–3.5 seconds while gameplay is active.
