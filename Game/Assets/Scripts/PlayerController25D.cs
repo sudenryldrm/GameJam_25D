@@ -84,7 +84,7 @@ public class PlayerController25D : MonoBehaviour
         jumpsRemaining = maxJumps;
     }
 
-    // Measure mesh bounds before animation so imported unit scales do not hide the model.
+    // Fit the bind-pose geometry, independently of imported animation/culling bounds.
     private void FitVisualModel()
     {
         if (visualModel == null)
@@ -120,7 +120,8 @@ public class PlayerController25D : MonoBehaviour
         {
             Bounds localBounds;
             if (renderer is SkinnedMeshRenderer skinned && skinned.sharedMesh != null)
-                localBounds = skinned.localBounds;
+                // Imported culling bounds can be offset from the actual mesh.
+                localBounds = skinned.sharedMesh.bounds;
             else if (renderer is MeshRenderer &&
                      renderer.TryGetComponent(out MeshFilter filter) && filter.sharedMesh != null)
                 localBounds = filter.sharedMesh.bounds;
