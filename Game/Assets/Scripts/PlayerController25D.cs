@@ -28,7 +28,8 @@ public class PlayerController25D : MonoBehaviour
 
     [Header("Görsel Ölçek Ayarı")]
     [SerializeField] private Transform visualModel;
-    [SerializeField] private float modelScale = 40f;       // Sisteme kaydettiğimiz 40 ölçeği
+    [SerializeField] private float modelScale = 40f;
+    [SerializeField] private bool fitModelToCollider = false;
     [SerializeField] private float modelStandingY = -1f;
 
     [HideInInspector] public bool isInteracting = false;
@@ -78,8 +79,67 @@ public class PlayerController25D : MonoBehaviour
 
     private void Start()
     {
+        if (fitModelToCollider) FitVisualModel();
         SetupAnimations();
         jumpsRemaining = maxJumps;
+    }
+
+    // Measure mesh bounds before animation so imported unit scales do not hide the model.
+    private void FitVisualModel()
+    {
+        if (visualModel == null)
+        {
+            Debug.LogError("Player visual model is missing.", this);
+            return;
+        }
+
+        visualModel.localScale = Vector3.one;
+        if (!TryGetVisualBounds(out Bounds bounds) || bounds.size.y <= 0f)
+        {
+            Debug.LogError("Player model has no measurable mesh. Check its FBX import.", this);
+            return;
+        }
+
+        modelScale = col.height / bounds.size.y;
+        visualModel.localScale = Vector3.one * modelScale;
+        if (!TryGetVisualBounds(out bounds)) return;
+
+        Vector3 position = visualModel.localPosition;
+        position.x += col.center.x - bounds.center.x;
+        position.z += col.center.z - bounds.center.z;
+        position.y += col.center.y - col.height * 0.5f - bounds.min.y;
+        visualModel.localPosition = position;
+        modelStandingY = position.y;
+    }
+
+    private bool TryGetVisualBounds(out Bounds result)
+    {
+        result = default;
+        bool found = false;
+        foreach (Renderer renderer in visualModel.GetComponentsInChildren<Renderer>(true))
+        {
+            Bounds localBounds;
+            if (renderer is SkinnedMeshRenderer skinned && skinned.sharedMesh != null)
+                localBounds = skinned.localBounds;
+            else if (renderer is MeshRenderer &&
+                     renderer.TryGetComponent(out MeshFilter filter) && filter.sharedMesh != null)
+                localBounds = filter.sharedMesh.bounds;
+            else
+                continue;
+
+            Matrix4x4 toPlayer = transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 corner = localBounds.center + Vector3.Scale(localBounds.extents,
+                    new Vector3((i & 1) == 0 ? -1f : 1f,
+                                (i & 2) == 0 ? -1f : 1f,
+                                (i & 4) == 0 ? -1f : 1f));
+                Vector3 point = toPlayer.MultiplyPoint3x4(corner);
+                if (!found) { result = new Bounds(point, Vector3.zero); found = true; }
+                else result.Encapsulate(point);
+            }
+        }
+        return found;
     }
 
     private void SetupAnimations()
@@ -267,7 +327,7 @@ public class PlayerController25D : MonoBehaviour
     {
         if (visualModel != null)
         {
-            // Model her zaman orijinal 40 ölçeğinde ve dik kalır
+            // Preserve the configured or measured visual scale.
             visualModel.localScale = new Vector3(modelScale, modelScale, modelScale);
 
             Vector3 currentPos = visualModel.localPosition;

@@ -172,6 +172,7 @@ MonoBehaviour:
   jumpClip: {fileID: -8630955994762890147, guid: 9ddf5450cba8e69458b6eb2e021ef2c6, type: 3}
   visualModel: {fileID: 748203862}
   modelScale: 1
+  fitModelToCollider: 1
   modelStandingY: -1
   isInteracting: 0
 --- !u!1001 &1454865142
