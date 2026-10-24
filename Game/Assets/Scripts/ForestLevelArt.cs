@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 [ExecuteAlways]
 public sealed class ForestLevelArt : MonoBehaviour
 {
-    public enum ArtKind { Platform, Pine, Grass, Rock, Log }
+    public enum ArtKind { Platform, Pine, Grass, Rock, Log, Flower }
 
     [System.Serializable]
     public sealed class Placement
@@ -16,6 +16,9 @@ public sealed class ForestLevelArt : MonoBehaviour
         public Vector3 surfaceCenter;
         public Vector3 dimensions = Vector3.one;
         public float yaw;
+        public float width;
+        public Material tint;
+        public bool silhouette;
     }
 
     [SerializeField] private Placement[] placements;
@@ -26,6 +29,8 @@ public sealed class ForestLevelArt : MonoBehaviour
     [SerializeField] private Material rock;
     [SerializeField] private Material wood;
     [SerializeField] private Material cutWood;
+    [SerializeField] private Material flowerPetal;
+    [SerializeField] private Material flowerCenter;
 
     private bool needsFit;
     private bool reportedFailure;
@@ -66,7 +71,7 @@ public sealed class ForestLevelArt : MonoBehaviour
                 bool selected = IsSelected(renderer.name, item.meshNames);
                 renderer.enabled = selected;
                 if (!selected) continue;
-                AssignMaterials(renderer, item.kind);
+                AssignMaterials(renderer, item.kind, item.tint, item.silhouette);
                 // Repeated low-poly decorations receive light but do not add shadow draws.
                 renderer.shadowCastingMode = item.kind == ArtKind.Platform ? ShadowCastingMode.On : ShadowCastingMode.Off;
                 renderer.receiveShadows = true;
@@ -92,6 +97,15 @@ public sealed class ForestLevelArt : MonoBehaviour
             else
                 model.localScale = Vector3.one * (item.dimensions.y / bounds.size.y);
             if (!TryBounds(renderers, out bounds)) { complete = false; continue; }
+            if (item.kind == ArtKind.Grass && item.width > 0f && bounds.size.x > 0.0001f)
+            {
+                // The grass row is authored at zero yaw; its local X remains
+                // horizontal after standing the exported blade axis upright.
+                Vector3 scale = model.localScale;
+                scale.x *= item.width / bounds.size.x;
+                model.localScale = scale;
+                if (!TryBounds(renderers, out bounds)) { complete = false; continue; }
+            }
             float anchorY = item.kind == ArtKind.Platform ? bounds.max.y : bounds.min.y;
             model.position += new Vector3(item.surfaceCenter.x - bounds.center.x,
                 item.surfaceCenter.y - anchorY, item.surfaceCenter.z - bounds.center.z);
@@ -119,7 +133,7 @@ public sealed class ForestLevelArt : MonoBehaviour
         return found;
     }
 
-    private void AssignMaterials(MeshRenderer renderer, ArtKind kind)
+    private void AssignMaterials(MeshRenderer renderer, ArtKind kind, Material tint, bool silhouette)
     {
         if (!renderer.TryGetComponent(out MeshFilter filter) || filter.sharedMesh == null) return;
         int slots = Mathf.Max(1, filter.sharedMesh.subMeshCount);
@@ -129,9 +143,14 @@ public sealed class ForestLevelArt : MonoBehaviour
             switch (kind)
             {
                 case ArtKind.Platform: materials[slot] = renderer.name.StartsWith("grassGround") ? turf : earth; break;
-                case ArtKind.Pine: materials[slot] = renderer.name == "TreeLeaves" ? pine : wood; break;
-                case ArtKind.Grass: materials[slot] = grass; break;
+                case ArtKind.Pine: materials[slot] = silhouette && tint != null ? tint :\n                    renderer.name.StartsWith("TreeLeaves") ? (tint != null ? tint : pine) : wood; break;
+                case ArtKind.Grass: materials[slot] = tint != null ? tint : grass; break;
                 case ArtKind.Rock: materials[slot] = rock; break;
+                case ArtKind.Flower:
+                    materials[slot] = renderer.name.StartsWith("FlowerLeaves") ? grass :
+                        renderer.name.StartsWith("FlowerCenters") ? flowerCenter :
+                        (tint != null ? tint : flowerPetal);
+                    break;
                 default: materials[slot] = slot == 0 ? wood : cutWood; break;
             }
         }

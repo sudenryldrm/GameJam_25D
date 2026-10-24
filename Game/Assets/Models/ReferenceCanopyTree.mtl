@@ -1,0 +1,5 @@
+newmtl TreeLeaves
+Kd 0.07 0.20 0.06
+
+newmtl TreeTrunk
+Kd 0.18 0.08 0.025
