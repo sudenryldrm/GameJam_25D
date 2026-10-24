@@ -114,6 +114,8 @@ public class Scene2ChaseController : MonoBehaviour
         { apple.gameObject.SetActive(false); Destroy(apple.gameObject); }
         foreach (PoisonCloud cloud in FindObjectsByType<PoisonCloud>(FindObjectsSortMode.None))
         { cloud.gameObject.SetActive(false); Destroy(cloud.gameObject); }
+        foreach (DwarfAxeProjectile axe in FindObjectsByType<DwarfAxeProjectile>(FindObjectsSortMode.None))
+        { axe.gameObject.SetActive(false); Destroy(axe.gameObject); }
     }
 
     private void PauseTime()
