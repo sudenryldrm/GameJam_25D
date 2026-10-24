@@ -63,10 +63,10 @@ public class Scene2ChaseController : MonoBehaviour
         }
     }
 
-    public void HitPlayer(PlayerController25D victim)
+    public void HitPlayer(PlayerController25D victim, string cause = "Zehirlendin!")
     {
         if (victim != player || reading || completed || LevelIntroCutscene.IsPlaying || Time.time < protectedUntil) return;
-        notice = "Zehirlendin! Başlangıca döndün.";
+        notice = cause + " Başlangıca döndün.";
         noticeUntil = Time.unscaledTime + 2.5f;
         player.Respawn();
     }
@@ -157,7 +157,7 @@ public class Scene2ChaseController : MonoBehaviour
         GUI.Box(new Rect(20, 20, 680, 110), GUIContent.none);
         GUI.Label(new Rect(35, 28, 650, 30), "2. Bölüm — Cadıdan Kaçış", headingStyle);
         GUI.Label(new Rect(35, 65, 650, 55),
-            "A/D: Hareket   Shift: Koş   Space: Zıpla / Çift zıpla   R: Yeniden başla\nMor: Cadı   Kırmızı: Zehirli elma   Yeşil: Zehir bulutu", textStyle);
+            "A/D: Hareket   Shift: Koş   Space: Zıpla / Çift zıpla   R: Yeniden başla\nMor: Cadı   Kırmızı: Zehirli elma   Turuncu: Cüce baltası   Yeşil: Zehir bulutu", textStyle);
         GUI.Label(new Rect(1030, 25, 230, 35), $"Tekrar: {restartCount}", textStyle);
         if (Time.time < protectedUntil && !completed)
             GUI.Label(new Rect(35, 140, 750, 35), "Kısa süreli korunma aktif — ilerle!", textStyle);
