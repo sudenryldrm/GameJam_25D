@@ -1,0 +1,79 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class FirstLevelMaskUI : MonoBehaviour
+{
+    [SerializeField] private Transform mask;
+    private PlayerController25D player;
+    private bool reading;
+    private float previousTimeScale;
+    private GUIStyle textStyle;
+    private GUIStyle headingStyle;
+    private bool NearMask => player != null && mask != null &&
+        Vector3.Distance(player.transform.position, mask.position) < 2.3f;
+
+    private void Start()
+    {
+        player = FindFirstObjectByType<PlayerController25D>();
+        if (player != null) player.Respawned += Close;
+    }
+
+    private void Update()
+    {
+        if (player == null || Keyboard.current == null) return;
+        if (NearMask && Keyboard.current.eKey.wasPressedThisFrame)
+        {
+            if (reading) Close();
+            else
+            {
+                reading = true;
+                previousTimeScale = Time.timeScale;
+                player.isInteracting = true;
+                Time.timeScale = 0f;
+            }
+        }
+        if (reading && (!NearMask || Keyboard.current.escapeKey.wasPressedThisFrame)) Close();
+    }
+
+    private void Close()
+    {
+        if (!reading) return;
+        reading = false;
+        Time.timeScale = previousTimeScale;
+        if (player != null) player.isInteracting = false;
+    }
+
+    private void OnDisable()
+    {
+        Close();
+        if (player != null) player.Respawned -= Close;
+    }
+
+    private void OnGUI()
+    {
+        if (!reading && !NearMask) return;
+        if (textStyle == null)
+        {
+            textStyle = new GUIStyle(GUI.skin.label) { fontSize = 19, wordWrap = true };
+            textStyle.normal.textColor = Color.white;
+            headingStyle = new GUIStyle(textStyle) { fontSize = 26, fontStyle = FontStyle.Bold };
+        }
+        Matrix4x4 previous = GUI.matrix;
+        GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity,
+            new Vector3(Screen.width / 1280f, Screen.height / 720f, 1f));
+        if (reading)
+        {
+            GUI.Box(new Rect(220, 245, 840, 245), GUIContent.none);
+            GUI.Label(new Rect(250, 270, 780, 45), "Çirkin'in Maskesi", headingStyle);
+            GUI.Label(new Rect(250, 330, 780, 120),
+                "Karanlık bir balodan geriye kalan yırtık bir maske... Sevginin değil, derin bir esaretin sembolü. " +
+                "Bu masaldaki herkes göründüğü kişi olmayabilir.\n\nE veya Esc ile devam et.", textStyle);
+        }
+        else
+        {
+            GUI.Box(new Rect(400, 610, 480, 65), GUIContent.none);
+            GUI.Label(new Rect(420, 625, 440, 45), "[E] Çirkin'in maskesini incele", textStyle);
+        }
+        GUI.matrix = previous;
+    }
+}
