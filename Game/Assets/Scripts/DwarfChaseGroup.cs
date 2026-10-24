@@ -4,6 +4,7 @@ using UnityEngine;
 public class DwarfChaseGroup : MonoBehaviour
 {
     [SerializeField] private Transform target;
+    [SerializeField] private Collider walkableGround;
     [SerializeField] private float firstDistance = 2.2f;
     [SerializeField] private float spacing = 0.95f;
     private struct TrailPoint
@@ -33,11 +34,23 @@ public class DwarfChaseGroup : MonoBehaviour
         ResetTrail();
     }
 
+    // Record the horizontal route on the floor, never the player's jump arc.
     private Vector3 PlayerFeet()
     {
         Vector3 point = playerBody != null ? playerBody.position : target.position;
         if (playerCollider != null) point.y += playerCollider.center.y - playerCollider.height * 0.5f;
         else point.y -= 1f;
+        return GroundPoint(point);
+    }
+
+    public Vector3 GroundPoint(Vector3 point)
+    {
+        if (walkableGround == null) return point;
+        Bounds bounds = walkableGround.bounds;
+        Ray ray = new Ray(new Vector3(point.x, bounds.max.y + 1f, point.z), Vector3.down);
+        if (walkableGround.Raycast(ray, out RaycastHit hit, bounds.size.y + 2f))
+            point.y = hit.point.y;
+        else point.y = bounds.max.y;
         return point;
     }
 
@@ -69,8 +82,6 @@ public class DwarfChaseGroup : MonoBehaviour
         Ready = false;
         trail.Clear();
         Vector3 feet = PlayerFeet();
-        if (Physics.Raycast(feet + Vector3.up * 1.1f, Vector3.down, out RaycastHit hit, 10f, ~0, QueryTriggerInteraction.Ignore))
-            feet.y = hit.point.y;
         Vector3 start = feet - Vector3.right * (firstDistance + spacing * 6 + 0.5f);
         AddPoint(start);
         AddPoint(feet);

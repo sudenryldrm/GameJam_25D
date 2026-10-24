@@ -1053,7 +1053,7 @@ GameObject:
   - component: {fileID: 3400000001}
   - component: {fileID: 3400000002}
   m_Layer: 0
-  m_Name: SevenDwarfs_Placeholders
+  m_Name: SevenDwarfs
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1094,6 +1094,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DwarfChaseGroup
   target: {fileID: 1290902500}
+  walkableGround: {fileID: 280651024}
   firstDistance: 2.2
   spacing: 0.95
 --- !u!1 &3400000003
@@ -1108,8 +1109,9 @@ GameObject:
   - component: {fileID: 3400000005}
   - component: {fileID: 3400000006}
   - component: {fileID: 3400000007}
+  - component: {fileID: 3900000000}
   m_Layer: 0
-  m_Name: Dwarf_01_Capsule
+  m_Name: Dwarf_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1319,8 +1321,9 @@ GameObject:
   - component: {fileID: 3400000016}
   - component: {fileID: 3400000017}
   - component: {fileID: 3400000018}
+  - component: {fileID: 3900000001}
   m_Layer: 0
-  m_Name: Dwarf_02_Capsule
+  m_Name: Dwarf_02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1530,8 +1533,9 @@ GameObject:
   - component: {fileID: 3400000027}
   - component: {fileID: 3400000028}
   - component: {fileID: 3400000029}
+  - component: {fileID: 3900000002}
   m_Layer: 0
-  m_Name: Dwarf_03_Capsule
+  m_Name: Dwarf_03
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1741,8 +1745,9 @@ GameObject:
   - component: {fileID: 3400000038}
   - component: {fileID: 3400000039}
   - component: {fileID: 3400000040}
+  - component: {fileID: 3900000003}
   m_Layer: 0
-  m_Name: Dwarf_04_Capsule
+  m_Name: Dwarf_04
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1952,8 +1957,9 @@ GameObject:
   - component: {fileID: 3400000049}
   - component: {fileID: 3400000050}
   - component: {fileID: 3400000051}
+  - component: {fileID: 3900000004}
   m_Layer: 0
-  m_Name: Dwarf_05_Capsule
+  m_Name: Dwarf_05
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2163,8 +2169,9 @@ GameObject:
   - component: {fileID: 3400000060}
   - component: {fileID: 3400000061}
   - component: {fileID: 3400000062}
+  - component: {fileID: 3900000005}
   m_Layer: 0
-  m_Name: Dwarf_06_Capsule
+  m_Name: Dwarf_06
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2374,8 +2381,9 @@ GameObject:
   - component: {fileID: 3400000071}
   - component: {fileID: 3400000072}
   - component: {fileID: 3400000073}
+  - component: {fileID: 3900000006}
   m_Layer: 0
-  m_Name: Dwarf_07_Capsule
+  m_Name: Dwarf_07
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8858,3 +8866,88 @@ SceneRoots:
   - {fileID: 3500000001}
   - {fileID: 3600000001}
   - {fileID: 3800000001}
+
+--- !u!114 &3900000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3400000003}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bf07044a0a5085a7f9dea177a14e49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DwarfModelVisual
+--- !u!114 &3900000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3400000014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bf07044a0a5085a7f9dea177a14e49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DwarfModelVisual
+--- !u!114 &3900000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3400000025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bf07044a0a5085a7f9dea177a14e49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DwarfModelVisual
+--- !u!114 &3900000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3400000036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bf07044a0a5085a7f9dea177a14e49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DwarfModelVisual
+--- !u!114 &3900000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3400000047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bf07044a0a5085a7f9dea177a14e49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DwarfModelVisual
+--- !u!114 &3900000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3400000058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bf07044a0a5085a7f9dea177a14e49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DwarfModelVisual
+--- !u!114 &3900000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3400000069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bf07044a0a5085a7f9dea177a14e49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DwarfModelVisual
