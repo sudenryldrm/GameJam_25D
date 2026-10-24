@@ -174,6 +174,11 @@ public class TowerLevelController : MonoBehaviour
     private void OnGUI()
     {
         if (player == null) return;
+        if (intro && introCutscene != null && introCutscene.playableAsset != null)
+        {
+            GUI.Label(new Rect(24, Screen.height - 42, 350, 30), "E / Space / Esc: Cutscene'i geç");
+            return;
+        }
         if (labelStyle == null)
         {
             labelStyle = new GUIStyle(GUI.skin.label) { fontSize = 19, wordWrap = true };

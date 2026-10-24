@@ -48,7 +48,7 @@ public class Scene2ChaseController : MonoBehaviour
             SceneManager.LoadSceneAsync(gameObject.scene.path, LoadSceneMode.Single);
             return;
         }
-        if (completed) return;
+        if (completed || LevelIntroCutscene.IsPlaying) return;
         if (NearFrog && Keyboard.current.eKey.wasPressedThisFrame)
         {
             reading = !reading;
@@ -65,7 +65,7 @@ public class Scene2ChaseController : MonoBehaviour
 
     public void HitPlayer(PlayerController25D victim)
     {
-        if (victim != player || reading || completed || Time.time < protectedUntil) return;
+        if (victim != player || reading || completed || LevelIntroCutscene.IsPlaying || Time.time < protectedUntil) return;
         notice = "Zehirlendin! Başlangıca döndün.";
         noticeUntil = Time.unscaledTime + 2.5f;
         player.Respawn();
@@ -144,7 +144,7 @@ public class Scene2ChaseController : MonoBehaviour
 
     private void OnGUI()
     {
-        if (player == null) return;
+        if (player == null || LevelIntroCutscene.IsPlaying) return;
         if (textStyle == null)
         {
             textStyle = new GUIStyle(GUI.skin.label) { fontSize = 19, wordWrap = true };

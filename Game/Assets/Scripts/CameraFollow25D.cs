@@ -1,9 +1,11 @@
 using UnityEngine;
+using Unity.Cinemachine;
 
 [RequireComponent(typeof(Camera))]
 public class CameraFollow25D : MonoBehaviour
 {
     [SerializeField] private Transform target;
+    [SerializeField] private CinemachineCamera gameplayCamera;
     [SerializeField] private float smoothSpeed = 6f;
     [SerializeField] private Vector3 offset = new Vector3(0f, 2.2f, -20f);
     [SerializeField] private bool lockHorizontalPosition;
@@ -23,6 +25,9 @@ public class CameraFollow25D : MonoBehaviour
     private float minimumY = 3.8f;
     private float minimumHalfWidth;
     private bool configured;
+
+    private Transform FollowTransform => gameplayCamera != null ? gameplayCamera.transform : transform;
+    private float CurrentViewSize => gameplayCamera != null ? gameplayCamera.Lens.OrthographicSize : view.orthographicSize;
 
     private void Start()
     {
@@ -54,10 +59,21 @@ public class CameraFollow25D : MonoBehaviour
                     break;
             }
         }
-        view.orthographic = true;
-        view.nearClipPlane = 0.1f;
-        view.farClipPlane = 100f;
-        transform.rotation = Quaternion.Euler(8f, 0f, 0f);
+        if (gameplayCamera != null)
+        {
+            LensSettings lens = gameplayCamera.Lens;
+            lens.ModeOverride = LensSettings.OverrideModes.Orthographic;
+            lens.NearClipPlane = 0.1f;
+            lens.FarClipPlane = 100f;
+            gameplayCamera.Lens = lens;
+        }
+        else
+        {
+            view.orthographic = true;
+            view.nearClipPlane = 0.1f;
+            view.farClipPlane = 100f;
+        }
+        FollowTransform.rotation = Quaternion.Euler(8f, 0f, 0f);
         configured = true;
         UpdateViewSize();
         SnapToTarget();
@@ -66,13 +82,20 @@ public class CameraFollow25D : MonoBehaviour
     private void UpdateViewSize()
     {
         // Keep both tower edges visible on narrower windows as well.
-        view.orthographicSize = Mathf.Max(viewSize, minimumHalfWidth / Mathf.Max(0.1f, view.aspect));
+        float size = Mathf.Max(viewSize, minimumHalfWidth / Mathf.Max(0.1f, view.aspect));
+        if (gameplayCamera != null)
+        {
+            LensSettings lens = gameplayCamera.Lens;
+            lens.OrthographicSize = size;
+            gameplayCamera.Lens = lens;
+        }
+        else view.orthographicSize = size;
     }
 
     private float CameraX()
     {
         if (lockHorizontalPosition) return horizontalPosition;
-        float halfWidth = view.orthographicSize * view.aspect;
+        float halfWidth = CurrentViewSize * view.aspect;
         if (maximumX - minimumX <= halfWidth * 2f) return (minimumX + maximumX) * 0.5f;
         return Mathf.Clamp(target.position.x + offset.x + facing * lookAhead,
             minimumX + halfWidth, maximumX - halfWidth);
@@ -83,7 +106,7 @@ public class CameraFollow25D : MonoBehaviour
         if (!configured || target == null) return;
         followVelocity = Vector3.zero;
         facing = 1f;
-        transform.position = new Vector3(CameraX(), Mathf.Max(minimumY, target.position.y + offset.y), offset.z);
+        FollowTransform.position = new Vector3(CameraX(), Mathf.Max(minimumY, target.position.y + offset.y), offset.z);
     }
 
     private void LateUpdate()
@@ -92,10 +115,10 @@ public class CameraFollow25D : MonoBehaviour
         UpdateViewSize();
         if (targetBody != null && Mathf.Abs(targetBody.linearVelocity.x) > 0.2f)
             facing = Mathf.MoveTowards(facing, Mathf.Sign(targetBody.linearVelocity.x), Time.deltaTime * 4f);
-        float dy = target.position.y + offset.y - transform.position.y;
-        float y = transform.position.y + Mathf.Sign(dy) * Mathf.Max(0f, Mathf.Abs(dy) - verticalDeadZone);
+        float dy = target.position.y + offset.y - FollowTransform.position.y;
+        float y = FollowTransform.position.y + Mathf.Sign(dy) * Mathf.Max(0f, Mathf.Abs(dy) - verticalDeadZone);
         Vector3 destination = new Vector3(CameraX(), Mathf.Max(minimumY, y), offset.z);
-        transform.position = Vector3.SmoothDamp(transform.position, destination, ref followVelocity,
+        FollowTransform.position = Vector3.SmoothDamp(FollowTransform.position, destination, ref followVelocity,
             1f / Mathf.Max(0.1f, smoothSpeed), Mathf.Infinity, Time.deltaTime);
     }
 
