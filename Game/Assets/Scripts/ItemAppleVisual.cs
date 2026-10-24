@@ -33,7 +33,7 @@ public sealed class ItemAppleVisual : MonoBehaviour
             needsFit = !FitModel();
             retryAt = Time.realtimeSinceStartup + 1f;
         }
-        if (fitted && model != null)
+        if (fitted && model != null && Application.isPlaying)
         {
             float t = Application.isPlaying ? Time.time : Time.realtimeSinceStartup;
             model.localPosition = fittedLocalPosition + Vector3.up * (Mathf.Sin(t * bobFrequency) * bobAmplitude);
