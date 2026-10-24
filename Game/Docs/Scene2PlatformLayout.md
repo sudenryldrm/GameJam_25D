@@ -12,7 +12,7 @@ Referanstaki düzen iki kez yan yana tekrarlandı. Oynanış X/Y düzleminde, ka
 - `Art_Anchor`: modelinizi burada, platformun üstüne oturtun; görünümü tamamlayınca iki blokaj Mesh Renderer'ını gizleyebilirsiniz. BoxCollider'ı koruyun.
 - Alt boşluklar 4 birimdir. Modüller X=27'de düz bir zeminle birleşir.
 - Cutscene daha sonra eklenecek. Kovalamaca, geçici mor cadı ve kırmızı elmalarla aktiftir; ayrıntılar Scene2Mechanics.md dosyasındadır.
-- `Future_Cutscene_Anchor` yer işaretidir. Çıkış noktası artık `Chase_Finish` olarak bölüm sonu panelini açar; henüz yeni bir sahne yüklemez.
+- `Future_Cutscene_Anchor` yer işaretidir. Çıkış noktası artık `TowerEntrance_ToScene3` olarak kule sahnesine geçişi başlatır. `TowerEntrance_ModelAnchor` kule dış modeli içindir.
 - Düşünce başlangıca dönülür; cadı ve geçici tehlikeler de sıfırlanır. Zehirli elma/bulut çarpması aynı dönüşü kullanır.
 
 ## Bir modülün ölçüleri

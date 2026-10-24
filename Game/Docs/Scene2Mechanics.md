@@ -6,7 +6,7 @@
 - Elma veya zehir oyuncuya değince başlangıca dönülür; eski elmalar/bulutlar temizlenir, cadı başlangıç mesafesine döner.
 - Her dönüşte 2.5 saniye korunma vardır. Boşluğa düşmek de aynı sıfırlamayı kullanır.
 - Kurbağa yer tutucusunun yanında E ile hikaye açılır; okurken fizik ve kovalama durur. E/Esc ile devam edilir.
-- Sarı kapıdan geçince bölüm tamamlandı paneli açılır. Henüz üçüncü sahne veya cutscene yüklenmez.
+- Bölüm sonundaki kule kapısından geçince kısa kararmayla Scene3_TowerEscape açılır. Gerçek kule içi cutscene için yeni sahnede PlayableDirector alanı ayrılmıştır.
 - R ile bölüm yeniden başlatılır. Shift koşma, Space zıplama/çift zıplama.
 
 ## Artist için

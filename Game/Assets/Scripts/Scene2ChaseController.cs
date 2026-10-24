@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -8,6 +9,9 @@ public class Scene2ChaseController : MonoBehaviour
     [SerializeField] private WitchBossAI witch;
     [SerializeField] private Transform frogLorePoint;
     [SerializeField] private float respawnProtection = 2.5f;
+
+    [SerializeField] private string nextSceneName = "Scene3_TowerEscape";
+    private float transitionFade;
 
     private PlayerController25D player;
     private bool reading;
@@ -39,6 +43,7 @@ public class Scene2ChaseController : MonoBehaviour
         if (Keyboard.current == null || player == null) return;
         if (Keyboard.current.rKey.wasPressedThisFrame)
         {
+            StopAllCoroutines();
             RestoreTime();
             SceneManager.LoadSceneAsync(gameObject.scene.path, LoadSceneMode.Single);
             return;
@@ -79,12 +84,28 @@ public class Scene2ChaseController : MonoBehaviour
     public void CompleteLevel()
     {
         if (completed || player == null) return;
+        if (!Application.CanStreamedLevelBeLoaded(nextSceneName))
+        {
+            Debug.LogError($"Tower scene '{nextSceneName}' is missing from the build scene list.", this);
+            return;
+        }
         completed = true;
         reading = false;
         player.isInteracting = true;
         ClearHazards();
         if (witch != null) witch.StopChase();
-        PauseTime();
+        RestoreTime();
+        StartCoroutine(EnterTower());
+    }
+
+    private IEnumerator EnterTower()
+    {
+        while (transitionFade < 1f)
+        {
+            transitionFade = Mathf.Min(1f, transitionFade + Time.unscaledDeltaTime / 0.8f);
+            yield return null;
+        }
+        yield return SceneManager.LoadSceneAsync(nextSceneName, LoadSceneMode.Single);
     }
 
     private void ClearHazards()
@@ -145,9 +166,9 @@ public class Scene2ChaseController : MonoBehaviour
         if (completed)
         {
             GUI.Box(new Rect(310, 260, 660, 170), GUIContent.none);
-            GUI.Label(new Rect(340, 285, 600, 50), "Cadıdan kurtuldun!", headingStyle);
+            GUI.Label(new Rect(340, 285, 600, 50), "Kuleye giriyorsun...", headingStyle);
             GUI.Label(new Rect(340, 340, 600, 65),
-                "2. bölümün sonuna ulaştın.\nTekrar denemek için R'ye bas.", textStyle);
+                "Kulenin kapısı açılıyor.", textStyle);
         }
         else if (reading)
         {
@@ -161,6 +182,13 @@ public class Scene2ChaseController : MonoBehaviour
         {
             GUI.Box(new Rect(420, 610, 440, 55), GUIContent.none);
             GUI.Label(new Rect(440, 620, 400, 40), "[E] Ölü kurbağayı incele", textStyle);
+        }
+        if (transitionFade > 0f)
+        {
+            Color oldColor = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, transitionFade);
+            GUI.DrawTexture(new Rect(0, 0, 1280, 720), Texture2D.whiteTexture);
+            GUI.color = oldColor;
         }
         GUI.matrix = previous;
     }

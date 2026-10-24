@@ -276,7 +276,8 @@ public class PlayerController25D : MonoBehaviour
         // Zemin kontrolü
         Vector3 rayStart = transform.position + col.center;
         float rayLength = (col.height / 2f) + 0.25f;
-        isGrounded = Physics.Raycast(rayStart, Vector3.down, rayLength, ~0, QueryTriggerInteraction.Ignore);
+        isGrounded = Physics.Raycast(rayStart, Vector3.down, out RaycastHit groundHit, rayLength, ~0, QueryTriggerInteraction.Ignore)
+            && groundHit.normal.y > 0.35f;
 
         // Hız seçimi
         float targetSpeed = isRunning ? runSpeed : walkSpeed;
@@ -289,8 +290,12 @@ public class PlayerController25D : MonoBehaviour
         Vector3 vel = rb.linearVelocity;
         vel.x = currentVelocityX;
 
+        // Follow marked stair slopes while grounded; a jump still leaves the slope.
+        bool onStairs = isGrounded && groundHit.collider.GetComponent<StairRamp>() != null && vel.y < jumpForce * 0.5f;
+        if (onStairs)
+            vel.y = -groundHit.normal.x / groundHit.normal.y * vel.x;
         // Değişken Zıplama Yüksekliği
-        if (vel.y < 0)
+        else if (vel.y < 0)
             vel.y += Physics.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime;
         else if (vel.y > 0 && !isJumpPressed)
             vel.y += Physics.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
@@ -301,6 +306,11 @@ public class PlayerController25D : MonoBehaviour
         {
             Respawn();
         }
+    }
+
+    public void SetCheckpoint(Vector3 position)
+    {
+        spawnPosition = position;
     }
 
     public void Respawn()
