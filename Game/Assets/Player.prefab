@@ -35,7 +35,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 748203862}
+  - {fileID: 543450652245368093}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1832412874141316252
@@ -172,7 +172,7 @@ MonoBehaviour:
   idleClip: {fileID: 2910742486769232160, guid: 5e35c4c9cb415ec43877038fbcd8ca0b, type: 3}
   runClip: {fileID: 4188298191382927259, guid: 5617bd637670f3e4ab42c35f850e0e9c, type: 3}
   jumpClip: {fileID: -8630955994762890147, guid: 9ddf5450cba8e69458b6eb2e021ef2c6, type: 3}
-  visualModel: {fileID: 748203862}
+  visualModel: {fileID: 543450652245368093}
   modelScale: 1
   fitModelToCollider: 1
   modelStandingY: -1
@@ -225,16 +225,28 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7364429166828016665, guid: f2307438f57f0ff40a2a7685796934b5, type: 3}
+      propertyPath: m_UpdateWhenOffscreen
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f2307438f57f0ff40a2a7685796934b5, type: 3}
       propertyPath: m_Name
       value: Princess_Zelda (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2252395290834881504, guid: f2307438f57f0ff40a2a7685796934b5, type: 3}
+      propertyPath: m_UpdateWhenOffscreen
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: f2307438f57f0ff40a2a7685796934b5, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f2307438f57f0ff40a2a7685796934b5, type: 3}
---- !u!4 &748203862 stripped
+--- !u!4 &543450652245368093 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f2307438f57f0ff40a2a7685796934b5, type: 3}
   m_PrefabInstance: {fileID: 1454865142}
