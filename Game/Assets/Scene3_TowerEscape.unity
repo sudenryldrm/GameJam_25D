@@ -12233,6 +12233,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3100000554}
+  - component: {fileID: 4200000000}
   m_Layer: 0
   m_Name: BrokenGlassShoes_LorePoint
   m_TagString: Untagged
@@ -12255,6 +12256,7 @@ Transform:
   m_Children:
   - {fileID: 3100000556}
   - {fileID: 3100000560}
+  - {fileID: 4200000002}
   m_Father: {fileID: 3100000001}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0.0}
 --- !u!1 &3100000555
@@ -13013,3 +13015,85 @@ SceneRoots:
   - {fileID: 3100000001}
   - {fileID: 3100000580}
   - {fileID: 3800000001}
+--- !u!114 &4200000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100000553}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cae2d876c4087438784e9d7a96e6d9a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ItemAppleVisual
+  model: {fileID: 4200000002}
+  placeholders:
+  - {fileID: 3100000558}
+  - {fileID: 3100000562}
+  bodyMaterial: {fileID: 2100000, guid: a223e1b04d082f1e51070d53c3d5253b, type: 2}
+  stemMaterial: {fileID: 2100000, guid: c4c3d565b8d6b1a477f5e8f3d4ac1c39, type: 2}
+  height: 0.6
+  bottomOffset: -0.15
+--- !u!1001 &4200000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3100000554}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_Name
+      value: Apple_Item_Visual
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+--- !u!4 &4200000002 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+  m_PrefabInstance: {fileID: 4200000001}
+  m_PrefabAsset: {fileID: 0}
