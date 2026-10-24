@@ -322,11 +322,11 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   StartPosition:
     x: -37.5
-    y: 5.5
+    y: 3.6
     z: -20
   EndPosition:
     x: -34
-    y: 4.4
+    y: 2.6
     z: -20
   StartSize: 7
   EndSize: 5.8

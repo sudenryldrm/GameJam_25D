@@ -45,10 +45,12 @@ public class CameraFollow25D : MonoBehaviour
             switch (gameObject.scene.name)
             {
                 case "SampleScene":
+                    offset.y = 1.1f; minimumY = 2.6f;
                     viewSize = 6.6f;
                     lockHorizontalPosition = false;
                     break;
                 case "Scene2_WitchChase":
+                    offset.y = 1.1f; minimumY = 2.6f;
                     viewSize = 6.5f; minimumX = -5f; maximumX = 59f;
                     lookAhead = 1.8f; verticalDeadZone = 0.8f;
                     lockHorizontalPosition = false;
@@ -77,8 +79,11 @@ public class CameraFollow25D : MonoBehaviour
             view.nearClipPlane = 0.1f;
             view.farClipPlane = 100f;
         }
-        // A gentler forest angle shows the stone faces rather than mostly grass.
-        float pitch = useSceneProfile && gameObject.scene.name == "SampleScene" ? 6f : 8f;
+        // Face the vertical brick facade directly; deep ground tops no longer
+        // project over the stone rows. The tower retains its previous camera angle.
+        bool forestProfile = useSceneProfile && (gameObject.scene.name == "SampleScene" ||
+            gameObject.scene.name == "Scene2_WitchChase");
+        float pitch = forestProfile ? 0f : 8f;
         FollowTransform.rotation = Quaternion.Euler(pitch, 0f, 0f);
         configured = true;
         UpdateViewSize();
