@@ -6,6 +6,8 @@
 - Takip yolu oyuncunun yatay hareketini kaydeder ve yalnızca sahnedeki Ground collider yüzeyine yansıtır. Oyuncu zıpladığında veya üst platforma çıktığında cüceler alttaki zeminden yürür; zıplama yüksekliğini veya platform rotasının yüksekliğini kopyalamazlar. Bu ilk bölümün kesintisiz düz zemini içindir.
 - Oyuncuyu fiziksel olarak engellemezler. Baltaya temas etmek oyuncuyu başlangıca döndürür.
 - Düşüp başlangıca dönünce cüceler de başlangıç sırasına döner.
+- Oyun açıkken script yenilenirse veya grup kapatılıp açılırsa takip bağlantıları tekrar kurulur. Grup yedi takipçiye kendisini ve sıra numaralarını bağlar; Rigidbody ve görsel referansları yeniden bulunur. Başlangıç sırası Awake/Start çağrı sırasına bağlı değildir.
+- Oyun sırasında grubun bileşen menüsündeki **Log Chase Status**, hedefi, takip durumunu, duraklama durumunu, takipçi sayısını ve yol mesafesini Console’a yazar.
 - Üst platformlar 6'dan 4'e azaltılmış isteğe bağlı bir yan rotadır. Son iki platform, onlara ait çarpışmalar, model ve süslemeler kaldırılmıştır; ilk üç platform maskeye çıkar, dördüncü platform iniş sağlar. Zemindeki düz geçiş yolu açık kalır. En alçak platformun altı Y=3.05; yerdeki karakterin başı Y=2.5 olduğundan koşarak altından geçilir.
 - Maske üçüncü platformdadır: X=-8, Y=8, Z=-4. E ile ekrandaki açıklama açılır; okurken oyun ve takip durur. E/Esc ile devam edilir.
 - Her platform kökü üst yüzeyin merkezinde, ölçek (1,1,1). Modeller Art_Anchor altına eklenir; Blockout_Collision BoxCollider korunur.

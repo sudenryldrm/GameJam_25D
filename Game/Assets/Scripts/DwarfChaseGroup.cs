@@ -27,17 +27,35 @@ public class DwarfChaseGroup : MonoBehaviour
     public bool IsFollowing => Ready && player != null && !player.isInteracting && Time.timeScale > 0f;
     public float TotalDistance => trail.Count > 0 ? trail[trail.Count - 1].distance : 0f;
 
-    private void Start()
+    private void OnEnable() { Ready = false; }
+    private void Start() { EnsureInitialized(); }
+
+    // Awake/Start are not rerun after every live script reload. Reconnect the
+    // chase and respawn handler whenever transient runtime state was lost.
+    private bool EnsureInitialized()
     {
-        player = target != null ? target.GetComponent<PlayerController25D>() : FindFirstObjectByType<PlayerController25D>();
-        if (player == null) { Debug.LogError("Dwarf chase target is missing.", this); return; }
+        if (Ready && player != null && dwarfs != null) return true;
+        if (player != null) player.Respawned -= ResetTrail;
+        player = target != null ? target.GetComponentInParent<PlayerController25D>() : null;
+        if (player == null) player = FindFirstObjectByType<PlayerController25D>();
+        if (player == null) return false;
         target = player.transform;
         playerCollider = player.GetComponent<CapsuleCollider>();
         playerBody = player.GetComponent<Rigidbody>();
         dwarfs = GetComponentsInChildren<DwarfPursuer>(true);
+        for (int i = 0; i < dwarfs.Length; i++) dwarfs[i].Bind(this, i);
+        player.Respawned -= ResetTrail;
         player.Respawned += ResetTrail;
         ResetTrail();
-        axeThrowTimer = firstAxeDelay;
+        return Ready;
+    }
+
+    [ContextMenu("Log Chase Status")]
+    private void LogChaseStatus()
+    {
+        Debug.Log($"Dwarfs: ready={Ready}, following={IsFollowing}, player={player}, " +
+            $"interacting={(player != null && player.isInteracting)}, timeScale={Time.timeScale}, " +
+            $"followers={(dwarfs == null ? 0 : dwarfs.Length)}, trail={TotalDistance}", this);
     }
 
     // Record the horizontal route on the floor, never the player's jump arc.
@@ -62,6 +80,7 @@ public class DwarfChaseGroup : MonoBehaviour
 
     private void Update()
     {
+        if (!EnsureInitialized()) return;
         if (!IsFollowing || LevelIntroCutscene.IsPlaying || dwarfs == null || dwarfs.Length == 0) return;
         axeThrowTimer -= Time.deltaTime;
         if (axeThrowTimer > 0f) return;
@@ -82,6 +101,7 @@ public class DwarfChaseGroup : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (!EnsureInitialized()) return;
         if (!IsFollowing) return;
         Vector3 feet = PlayerFeet();
         if (trail.Count == 0 || Vector3.Distance(feet, trail[trail.Count - 1].feet) >= 0.04f)
@@ -137,8 +157,9 @@ public class DwarfChaseGroup : MonoBehaviour
         return Vector3.Lerp(a.feet, b.feet, length > 0.0001f ? Mathf.Clamp01((distance - a.distance) / length) : 1f);
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
+        Ready = false;
         if (player != null) player.Respawned -= ResetTrail;
         DwarfAxeProjectile.ClearFor(player);
     }
