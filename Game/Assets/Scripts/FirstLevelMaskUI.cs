@@ -6,6 +6,7 @@ public class FirstLevelMaskUI : MonoBehaviour
     [SerializeField] private Transform mask;
     private PlayerController25D player;
     private bool reading;
+    private readonly JournalBookView journal = new JournalBookView("Beast");
     private float previousTimeScale;
     private GUIStyle textStyle;
     private GUIStyle headingStyle;
@@ -20,19 +21,20 @@ public class FirstLevelMaskUI : MonoBehaviour
 
     private void Update()
     {
-        if (player == null || Keyboard.current == null) return;
-        if (NearMask && Keyboard.current.eKey.wasPressedThisFrame)
+        if (player == null) return;
+        if (NearMask && ((Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) || (!reading && JournalBookView.Clicked(mask))))
         {
             if (reading) Close();
             else
             {
                 reading = true;
+                journal.Open();
                 previousTimeScale = Time.timeScale;
                 player.isInteracting = true;
                 Time.timeScale = 0f;
             }
         }
-        if (reading && (!NearMask || Keyboard.current.escapeKey.wasPressedThisFrame)) Close();
+        if (reading && (!NearMask || (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame))) Close();
     }
 
     private void Close()
@@ -51,7 +53,8 @@ public class FirstLevelMaskUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!reading && !NearMask) return;
+        if (reading) { journal.Draw(Close); return; }
+        if (!NearMask) return;
         if (textStyle == null)
         {
             textStyle = new GUIStyle(GUI.skin.label) { fontSize = 19, wordWrap = true };
@@ -61,18 +64,9 @@ public class FirstLevelMaskUI : MonoBehaviour
         Matrix4x4 previous = GUI.matrix;
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity,
             new Vector3(Screen.width / 1280f, Screen.height / 720f, 1f));
-        if (reading)
-        {
-            GUI.Box(new Rect(220, 245, 840, 245), GUIContent.none);
-            GUI.Label(new Rect(250, 270, 780, 45), "Çirkin'in Maskesi", headingStyle);
-            GUI.Label(new Rect(250, 330, 780, 120),
-                "Karanlık bir balodan geriye kalan yırtık bir maske... Sevginin değil, derin bir esaretin sembolü. " +
-                "Bu masaldaki herkes göründüğü kişi olmayabilir.\n\nE veya Esc ile devam et.", textStyle);
-        }
-        else
         {
             GUI.Box(new Rect(400, 610, 480, 65), GUIContent.none);
-            GUI.Label(new Rect(420, 625, 440, 45), "[E] Çirkin'in maskesini incele", textStyle);
+            GUI.Label(new Rect(420, 625, 440, 45), "[E / Tıkla] Çirkin'in maskesini incele", textStyle);
         }
         GUI.matrix = previous;
     }

@@ -15,6 +15,7 @@ public class TowerLevelController : MonoBehaviour
     private PlayerController25D player;
     private bool intro = true;
     private bool reading;
+    private readonly JournalBookView journal = new JournalBookView("Shoes");
     private bool completed;
     private bool ownsPause;
     private float previousTimeScale;
@@ -74,8 +75,8 @@ public class TowerLevelController : MonoBehaviour
 
     private void Update()
     {
-        if (player == null || Keyboard.current == null) return;
-        if (Keyboard.current.rKey.wasPressedThisFrame)
+        if (player == null) return;
+        if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame))
         {
             RestoreTime();
             SceneManager.LoadSceneAsync(gameObject.scene.path, LoadSceneMode.Single);
@@ -83,20 +84,20 @@ public class TowerLevelController : MonoBehaviour
         }
         if (intro)
         {
-            if (Keyboard.current.eKey.wasPressedThisFrame || Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)
+            if ((Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) || (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) || (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame))
                 BeginChase();
             return;
         }
         if (completed) return;
         if (IsPlaying && player.transform.position.y < checkpointHeight - 6f)
         { player.Respawn(); return; }
-        if (NearShoes && Keyboard.current.eKey.wasPressedThisFrame)
+        if (NearShoes && ((Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) || (!reading && JournalBookView.Clicked(brokenShoes))))
         {
             reading = !reading;
             player.isInteracting = reading;
-            if (reading) PauseTime(); else RestoreTime();
+            if (reading) { journal.Open(); PauseTime(); } else RestoreTime();
         }
-        if (reading && (!NearShoes || Keyboard.current.escapeKey.wasPressedThisFrame))
+        if (reading && (!NearShoes || (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)))
         {
             reading = false;
             player.isInteracting = false;
@@ -176,8 +177,16 @@ public class TowerLevelController : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    private void CloseJournal()
+    {
+        reading = false;
+        if (player != null) player.isInteracting = false;
+        RestoreTime();
+    }
+
     private void OnGUI()
     {
+        if (reading) { journal.Draw(CloseJournal); return; }
         if (player == null) return;
         if (intro && introCutscene != null && introCutscene.playableAsset != null)
         {
@@ -216,18 +225,10 @@ public class TowerLevelController : MonoBehaviour
             GUI.Label(new Rect(330, 285, 620, 50), "Kulenin tepesine ulaştın!", headingStyle);
             GUI.Label(new Rect(330, 345, 620, 70), "Prensten ve öpücüklerinden kurtuldun.\nTekrar oynamak için R.", labelStyle);
         }
-        else if (reading)
-        {
-            GUI.Box(new Rect(220, 250, 840, 240), GUIContent.none);
-            GUI.Label(new Rect(250, 275, 780, 45), "Kırılmış Cam Ayakkabılar", headingStyle);
-            GUI.Label(new Rect(250, 330, 780, 110),
-                "Kırık cam parçaları Sindirella'nın buradan geçtiğini söylüyor. " +
-                "Bu kulede kurtarılmayı beklemek, masallardaki gibi mutlu bir son getirmemiş.\n\nE veya Esc ile devam et.", labelStyle);
-        }
         else
         {
             if (NearShoes)
-                GUI.Label(new Rect(420, 625, 600, 45), "[E] Kırık cam ayakkabıları incele", headingStyle);
+                GUI.Label(new Rect(420, 625, 600, 45), "[E / Tıkla] Kırık cam ayakkabıları incele", headingStyle);
             if (Time.time < protectedUntil)
                 GUI.Label(new Rect(35, 145, 730, 35), "Kısa süreli korunma aktif!", labelStyle);
         }

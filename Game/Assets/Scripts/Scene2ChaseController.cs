@@ -15,6 +15,7 @@ public class Scene2ChaseController : MonoBehaviour
 
     private PlayerController25D player;
     private bool reading;
+    private readonly JournalBookView journal = new JournalBookView("Frog");
     private bool completed;
     private bool ownsPause;
     private float previousTimeScale;
@@ -40,8 +41,8 @@ public class Scene2ChaseController : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current == null || player == null) return;
-        if (Keyboard.current.rKey.wasPressedThisFrame)
+        if (player == null) return;
+        if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame))
         {
             StopAllCoroutines();
             RestoreTime();
@@ -49,13 +50,13 @@ public class Scene2ChaseController : MonoBehaviour
             return;
         }
         if (completed || LevelIntroCutscene.IsPlaying) return;
-        if (NearFrog && Keyboard.current.eKey.wasPressedThisFrame)
+        if (NearFrog && ((Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) || (!reading && JournalBookView.Clicked(frogLorePoint))))
         {
             reading = !reading;
             player.isInteracting = reading;
-            if (reading) PauseTime(); else RestoreTime();
+            if (reading) { journal.Open(); PauseTime(); } else RestoreTime();
         }
-        if (reading && (!NearFrog || Keyboard.current.escapeKey.wasPressedThisFrame))
+        if (reading && (!NearFrog || (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)))
         {
             reading = false;
             player.isInteracting = false;
@@ -144,8 +145,16 @@ public class Scene2ChaseController : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    private void CloseJournal()
+    {
+        reading = false;
+        if (player != null) player.isInteracting = false;
+        RestoreTime();
+    }
+
     private void OnGUI()
     {
+        if (reading) { journal.Draw(CloseJournal); return; }
         if (player == null || LevelIntroCutscene.IsPlaying) return;
         if (textStyle == null)
         {
@@ -172,18 +181,10 @@ public class Scene2ChaseController : MonoBehaviour
             GUI.Label(new Rect(340, 340, 600, 65),
                 "Kulenin kapısı açılıyor.", textStyle);
         }
-        else if (reading)
-        {
-            GUI.Box(new Rect(220, 250, 840, 240), GUIContent.none);
-            GUI.Label(new Rect(250, 275, 780, 45), "Ölü Kurbağa", headingStyle);
-            GUI.Label(new Rect(250, 330, 780, 110),
-                "Bir zamanlar bir prens olduğuna inanılan bu kurbağa, cadının zehirli deneylerinden sağ çıkamamış. " +
-                "Yerdeki elma parçaları, sıradaki kurbanın kim olacağını fısıldıyor.\n\nDevam etmek için E veya Esc.", textStyle);
-        }
         else if (NearFrog)
         {
             GUI.Box(new Rect(420, 610, 440, 55), GUIContent.none);
-            GUI.Label(new Rect(440, 620, 400, 40), "[E] Ölü kurbağayı incele", textStyle);
+            GUI.Label(new Rect(440, 620, 400, 40), "[E / Tıkla] Ölü kurbağayı incele", textStyle);
         }
         if (transitionFade > 0f)
         {
