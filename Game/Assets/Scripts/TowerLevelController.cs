@@ -25,10 +25,8 @@ public class TowerLevelController : MonoBehaviour
     private int restartCount;
     private string notice;
     private float noticeUntil;
-    private GUIStyle labelStyle;
-    private GUIStyle headingStyle;
 
-    public bool IsPlaying => !intro && !reading && !completed && Time.timeScale > 0f;
+    public bool IsPlaying => !LevelIntroCutscene.IsPlaying && !intro && !reading && !completed && Time.timeScale > 0f;
     private bool NearShoes => player != null && brokenShoes != null &&
         Vector3.Distance(player.transform.position, brokenShoes.position) < 2.5f;
 
@@ -75,6 +73,7 @@ public class TowerLevelController : MonoBehaviour
 
     private void Update()
     {
+        if (LevelIntroCutscene.IsPlaying) return;
         if (player == null) return;
         if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame))
         {
@@ -186,54 +185,21 @@ public class TowerLevelController : MonoBehaviour
 
     private void OnGUI()
     {
+        if (LevelIntroCutscene.IsPlaying) return;
         if (reading) { journal.Draw(CloseJournal); return; }
         if (player == null) return;
         if (intro && introCutscene != null && introCutscene.playableAsset != null)
-        {
-            GUI.Label(new Rect(24, Screen.height - 42, 350, 30), "E / Space / Esc: Cutscene'i geç");
-            return;
-        }
-        if (labelStyle == null)
-        {
-            labelStyle = new GUIStyle(GUI.skin.label) { fontSize = 19, wordWrap = true };
-            labelStyle.normal.textColor = Color.white;
-            headingStyle = new GUIStyle(labelStyle) { fontSize = 25, fontStyle = FontStyle.Bold };
-        }
-        Matrix4x4 oldMatrix = GUI.matrix;
-        GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity,
-            new Vector3(Screen.width / 1280f, Screen.height / 720f, 1f));
-        GUI.Box(new Rect(20, 20, 760, 115), GUIContent.none);
-        GUI.Label(new Rect(35, 28, 730, 35), "3. Bölüm — Kulenin İçinde", headingStyle);
-        GUI.Label(new Rect(35, 68, 730, 60),
-            "A/D: Hareket   Shift: Koş   Space: Zıpla / Çift zıpla   R: Yeniden başla\nMavi: Prens   Pembe kalpler: Öpücük   Yeşil: Kontrol noktası", labelStyle);
-        float height = Mathf.Clamp(player.transform.position.y - 1f, 0f, topFloorHeight);
-        GUI.Label(new Rect(1000, 30, 260, 70), $"Yükseklik: {height:0.0} / {topFloorHeight:0.0}\nTekrar: {restartCount}", labelStyle);
-        if (intro && introCutscene != null && introCutscene.playableAsset != null)
-        {
-            GUI.Label(new Rect(35, 640, 730, 40), "E / Space / Esc: Cutscene'i geç", labelStyle);
-        }
-        else if (intro)
-        {
-            GUI.Box(new Rect(230, 230, 820, 230), GUIContent.none);
-            GUI.Label(new Rect(260, 255, 760, 50), "Kuleye girdin... Prens yaklaşıyor.", headingStyle);
-            GUI.Label(new Rect(260, 320, 760, 100),
-                "Kule içi cutscene burada oynatılacak.\nŞimdilik E veya Space ile kaçışa başla.\nMerdivenlerden yüksel; boşlukları ve öpücükleri atlayarak aş.", labelStyle);
-        }
-        else if (completed)
-        {
-            GUI.Box(new Rect(300, 260, 680, 190), GUIContent.none);
-            GUI.Label(new Rect(330, 285, 620, 50), "Kulenin tepesine ulaştın!", headingStyle);
-            GUI.Label(new Rect(330, 345, 620, 70), "Prensten ve öpücüklerinden kurtuldun.\nTekrar oynamak için R.", labelStyle);
-        }
-        else
-        {
-            if (NearShoes)
-                GUI.Label(new Rect(420, 625, 600, 45), "[E / Tıkla] Kırık cam ayakkabıları incele", headingStyle);
-            if (Time.time < protectedUntil)
-                GUI.Label(new Rect(35, 145, 730, 35), "Kısa süreli korunma aktif!", labelStyle);
-        }
-        if (Time.unscaledTime < noticeUntil)
-            GUI.Label(new Rect(240, 175, 900, 60), notice, labelStyle);
-        GUI.matrix = oldMatrix;
+        { StorybookUI.SkipPrompt(); return; }
+        Matrix4x4 previous = StorybookUI.Begin();
+        StorybookUI.Chapter("III", "Ayışığı Kulesi");
+        float height = Mathf.Clamp(player.transform.position.y - 1f, 0, topFloorHeight);
+        StorybookUI.Stats($"Yükseliş: {height:0.0} / {topFloorHeight:0.0}\nYeniden doğuş: {restartCount}");
+        StorybookUI.Controls();
+        if (intro) StorybookUI.Dialog("Kule sessiz değil…", "Prens seni bulmadan merdivenlerden yüksel.\nE veya Space ile yola devam et.");
+        else if (completed) StorybookUI.Dialog("Masalın sonunu sen yazdın.", "Kulenin tepesine ulaştın; prensten ve öpücüklerinden kurtuldun.\nR ile yeniden başla.");
+        else if (NearShoes) StorybookUI.Prompt("Kırık Cam Ayakkabıların Hikâyesi");
+        if (Time.unscaledTime < noticeUntil) StorybookUI.Notice(notice);
+        else if (!intro && !completed && Time.time < protectedUntil) StorybookUI.Notice("Kısa süreli korunma aktif. Merdivenlerden yüksel!");
+        GUI.matrix = previous;
     }
 }

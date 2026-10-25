@@ -9,7 +9,7 @@ public sealed class JournalBookView
     private readonly string resource;
     private Texture2D image;
     private float openedAt;
-    private GUIStyle closeStyle, hintStyle;
+    private GUIStyle hintStyle;
 
     public JournalBookView(string resourceName) { resource = "Journals/" + resourceName; }
 
@@ -67,15 +67,14 @@ public sealed class JournalBookView
                 GUI.color = new Color(1, .93f, .76f, Mathf.Sin(t * Mathf.PI) * .11f);
                 GUI.DrawTexture(new Rect(spine + right * .8f, y + 8, Mathf.Max(2, right * .04f), height - 16), Texture2D.whiteTexture);
             }
-            if (closeStyle == null)
+            if (hintStyle == null)
             {
-                closeStyle = new GUIStyle(GUI.skin.button) { fontSize = 24, alignment = TextAnchor.MiddleCenter };
-                hintStyle = new GUIStyle(GUI.skin.label) { fontSize = 15, alignment = TextAnchor.MiddleCenter };
+                hintStyle = new GUIStyle(GUI.skin.label) { font = StorybookUI.RegularFont, fontSize = 17, alignment = TextAnchor.MiddleCenter };
                 hintStyle.normal.textColor = new Color(.92f, .86f, .72f);
             }
             GUI.color = new Color(1, 1, 1, ease);
-            GUI.backgroundColor = new Color(.19f, .12f, .075f, 1);
-            if (GUI.Button(new Rect(x + width - 40, Mathf.Max(6, y - 38), 36, 32), "×", closeStyle)) close();
+            GUI.backgroundColor = Color.white;
+            if (StorybookUI.CloseButton(new Rect(x + width - 40, Mathf.Max(6, y - 38), 36, 32))) close();
             GUI.Label(new Rect(x, y + height + 8, width, 28), "E / Esc — Kapat", hintStyle);
         }
         finally { GUI.matrix = matrix; GUI.color = color; GUI.backgroundColor = background; GUI.depth = depth; }

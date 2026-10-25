@@ -23,8 +23,6 @@ public class Scene2ChaseController : MonoBehaviour
     private int restartCount;
     private string notice;
     private float noticeUntil;
-    private GUIStyle textStyle;
-    private GUIStyle headingStyle;
 
     private void Awake() { Instance = this; }
 
@@ -41,6 +39,7 @@ public class Scene2ChaseController : MonoBehaviour
 
     private void Update()
     {
+        if (LevelIntroCutscene.IsPlaying) return;
         if (player == null) return;
         if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame))
         {
@@ -154,44 +153,23 @@ public class Scene2ChaseController : MonoBehaviour
 
     private void OnGUI()
     {
+        if (LevelIntroCutscene.IsPlaying) return;
         if (reading) { journal.Draw(CloseJournal); return; }
         if (player == null || LevelIntroCutscene.IsPlaying) return;
-        if (textStyle == null)
-        {
-            textStyle = new GUIStyle(GUI.skin.label) { fontSize = 19, wordWrap = true };
-            textStyle.normal.textColor = Color.white;
-            headingStyle = new GUIStyle(textStyle) { fontSize = 25, fontStyle = FontStyle.Bold };
-        }
-        Matrix4x4 previous = GUI.matrix;
-        GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity,
-            new Vector3(Screen.width / 1280f, Screen.height / 720f, 1f));
-        GUI.Box(new Rect(20, 20, 680, 110), GUIContent.none);
-        GUI.Label(new Rect(35, 28, 650, 30), "2. Bölüm — Cadıdan Kaçış", headingStyle);
-        GUI.Label(new Rect(35, 65, 650, 55),
-            "A/D: Hareket   Shift: Koş   Space: Zıpla / Çift zıpla   R: Yeniden başla\nMor: Cadı   Kırmızı: Zehirli elma   Turuncu: Cüce baltası   Yeşil: Zehir bulutu", textStyle);
-        GUI.Label(new Rect(1030, 25, 230, 35), $"Tekrar: {restartCount}", textStyle);
-        if (Time.time < protectedUntil && !completed)
-            GUI.Label(new Rect(35, 140, 750, 35), "Kısa süreli korunma aktif — ilerle!", textStyle);
-        if (Time.unscaledTime < noticeUntil)
-            GUI.Label(new Rect(350, 170, 650, 40), notice, headingStyle);
-        if (completed)
-        {
-            GUI.Box(new Rect(310, 260, 660, 170), GUIContent.none);
-            GUI.Label(new Rect(340, 285, 600, 50), "Kuleye giriyorsun...", headingStyle);
-            GUI.Label(new Rect(340, 340, 600, 65),
-                "Kulenin kapısı açılıyor.", textStyle);
-        }
-        else if (NearFrog)
-        {
-            GUI.Box(new Rect(420, 610, 440, 55), GUIContent.none);
-            GUI.Label(new Rect(440, 620, 400, 40), "[E / Tıkla] Ölü kurbağayı incele", textStyle);
-        }
+        Matrix4x4 previous = StorybookUI.Begin();
+        StorybookUI.Chapter("II", "Cadının Ormanı");
+        StorybookUI.Stats($"Yeniden doğuş: {restartCount}");
+        StorybookUI.Controls();
+        if (Time.unscaledTime < noticeUntil) StorybookUI.Notice(notice);
+        else if (Time.time < protectedUntil && !completed) StorybookUI.Notice("Kısa süreli korunma aktif. Yola devam et!");
+        if (completed) StorybookUI.Dialog("Orman geride kalıyor…", "Kulenin kapısı açılıyor. Hikâyenin bir sonraki sayfası seni bekliyor.");
+        else if (NearFrog) StorybookUI.Prompt("Kurbağanın Ardında Kalan Hikâye");
         if (transitionFade > 0f)
         {
-            Color oldColor = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, transitionFade);
-            GUI.DrawTexture(new Rect(0, 0, 1280, 720), Texture2D.whiteTexture);
-            GUI.color = oldColor;
+            Color color = GUI.color;
+            GUI.color = new Color(0, 0, 0, transitionFade);
+            GUI.DrawTexture(new Rect(-1280, -720, 3840, 2160), Texture2D.whiteTexture);
+            GUI.color = color;
         }
         GUI.matrix = previous;
     }

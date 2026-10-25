@@ -25,6 +25,11 @@ public class CameraFollow25D : MonoBehaviour
     private float minimumY = 3.8f;
     private float minimumHalfWidth;
     private bool configured;
+    private bool conversationActive;
+    private Vector3 conversationFrom, conversationTo;
+    private Quaternion conversationRotation;
+    private float conversationViewSize;
+    private float conversationCloseSize;
 
     private Transform FollowTransform => gameplayCamera != null ? gameplayCamera.transform : transform;
     private float CurrentViewSize => gameplayCamera != null ? gameplayCamera.Lens.OrthographicSize : view.orthographicSize;
@@ -131,7 +136,7 @@ public class CameraFollow25D : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!configured || target == null || Time.timeScale <= 0f) return;
+        if (conversationActive || !configured || target == null || Time.timeScale <= 0f) return;
         UpdateViewSize();
         if (targetBody != null && Mathf.Abs(targetBody.linearVelocity.x) > 0.2f)
             facing = Mathf.MoveTowards(facing, Mathf.Sign(targetBody.linearVelocity.x), Time.deltaTime * 4f);
@@ -140,6 +145,34 @@ public class CameraFollow25D : MonoBehaviour
         Vector3 destination = new Vector3(CameraX(), CameraY(y), offset.z);
         FollowTransform.position = Vector3.SmoothDamp(FollowTransform.position, destination, ref followVelocity,
             1f / Mathf.Max(0.1f, smoothSpeed), Mathf.Infinity, Time.deltaTime);
+    }
+
+    public void BeginConversationShot(Vector3 center)
+    {
+        conversationActive = true;
+        conversationFrom = FollowTransform.position;
+        conversationRotation = FollowTransform.rotation;
+        conversationViewSize = CurrentViewSize;
+        conversationTo = new Vector3(center.x, center.y - .35f, offset.z);
+        conversationCloseSize = Mathf.Max(2.8f, 3.2f / Mathf.Max(.1f, view.aspect));
+    }
+
+    public void BlendConversationShot(float amount)
+    {
+        if (!conversationActive) return;
+        FollowTransform.SetPositionAndRotation(Vector3.Lerp(conversationFrom, conversationTo, amount),
+            Quaternion.Slerp(conversationRotation, Quaternion.identity, amount));
+        float size = Mathf.Lerp(conversationViewSize, conversationCloseSize, amount);
+        if (gameplayCamera != null)
+        { LensSettings lens = gameplayCamera.Lens; lens.OrthographicSize = size; gameplayCamera.Lens = lens; }
+        else view.orthographicSize = size;
+    }
+
+    public void EndConversationShot()
+    {
+        BlendConversationShot(0);
+        conversationActive = false;
+        followVelocity = Vector3.zero;
     }
 
     private void OnDestroy()
