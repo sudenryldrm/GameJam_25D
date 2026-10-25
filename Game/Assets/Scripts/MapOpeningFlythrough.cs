@@ -25,6 +25,13 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
     private AmbientMode ambientMode;
     private float fogStart, fogEnd;
     private const float Offset = 1000;
+    private const float ShotDuration = 8f, ReturnDuration = 6f, TotalDuration = 30f;
+    private GUIStyle narrationStyle;
+    private static readonly string[] Narration = {
+        "Bir varmış, bir yokmuş, evvel zaman içinde masalların en bilinen köşesinde her şey yazıldığı gibi başlarmış.",
+        "Üvey anne aynaya bakar, avcı kıza kıyamaz, prenses ise yedi cücelerin evine sığınıp ta ki o zehirli elma uzatılana kadar her söylenene boyun eğermiş.",
+        "Ama bu hikâye o ezberlenen masallardan değilmiş."
+    };
     private readonly List<Renderer> hiddenPlayer = new List<Renderer>();
     private Transform player;
     private static readonly Vector3[][] Routes = {
@@ -62,7 +69,7 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
         cameraFollow.BeginCameraSequence();
         Running = true; IsPlaying = true; completedThisRun = true; restored = false;
         beganAt = Time.unscaledTime; elapsed = 0;
-        Debug.Log("OPENING started: three scenery maps, 15 seconds of rendered flight.");
+        Debug.Log("OPENING started: three scenery maps, 30 seconds with story narration.");
         SetShot(0); Evaluate(0);
         return true;
     }
@@ -105,15 +112,15 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
         // Do not consume the movie while a first-use shader or preview is blocking a frame.
         elapsed += Mathf.Min(Time.unscaledDeltaTime, .05f);
         float time = elapsed;
-        if (time >= 15) { Complete(); return; }
+        if (time >= TotalDuration) { Complete(); return; }
         Evaluate(time);
     }
 
     private void Evaluate(float time)
     {
-        int next = Mathf.Min(3, (int)(time / 4));
+        int next = Mathf.Min(3, (int)(time / ShotDuration));
         SetShot(next);
-        float t = Mathf.SmoothStep(0, 1, next < 3 ? (time - next * 4) / 4 : (time - 12) / 3);
+        float t = Mathf.SmoothStep(0, 1, next < 3 ? (time - next * ShotDuration) / ShotDuration : (time - ShotDuration * 3) / ReturnDuration);
         Vector3 position, look;
         if (next < 3)
         {
@@ -187,11 +194,82 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
         GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height * .065f), Texture2D.whiteTexture);
         GUI.DrawTexture(new Rect(0, Screen.height * .935f, Screen.width, Screen.height * .065f), Texture2D.whiteTexture);
         float time = elapsed;
-        float local = time - shot * 4;
+        DrawNarration(time);
+        float local = time - shot * ShotDuration;
         float fade = Mathf.Clamp01(1 - local / .22f);
-        if (shot < 3) fade = Mathf.Max(fade, Mathf.Clamp01((local - 3.78f) / .22f));
+        if (shot < 3) fade = Mathf.Max(fade, Mathf.Clamp01((local - (ShotDuration - .22f)) / .22f));
         GUI.color = new Color(0, 0, 0, fade);
         GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
         GUI.matrix = matrix; GUI.color = color; GUI.depth = depth;
+    }
+
+    private void DrawNarration(float time)
+    {
+        int index = time < 9 ? 0 : time < 23 ? 1 : 2;
+        float start = index == 0 ? .4f : index == 1 ? 9 : 23;
+        float end = index == 0 ? 9 : index == 1 ? 23 : TotalDuration;
+        float alpha = Mathf.SmoothStep(0, 1, Mathf.Clamp01((time - start) / 1.2f)) *
+            Mathf.SmoothStep(0, 1, Mathf.Clamp01((end - time) / .9f));
+        if (alpha <= 0) return;
+        if (narrationStyle == null)
+            narrationStyle = new GUIStyle { font = StorybookUI.RegularFont, fontStyle = FontStyle.Italic,
+                alignment = TextAnchor.MiddleCenter, wordWrap = true, richText = true };
+        narrationStyle.normal.textColor = Color.white;
+        float scale = Mathf.Min(Screen.width / 1920f, Screen.height / 1080f);
+        narrationStyle.fontSize = Mathf.Max(18, Mathf.RoundToInt((index == 2 ? 54 : 40) * scale));
+        string text = index == 0 ? "<size=" + Mathf.RoundToInt(narrationStyle.fontSize * 1.65f) + "><color=#EAC378>B</color></size>" + Narration[index].Substring(1) :
+            index == 2 ? "Ama bu hikâye\no ezberlenen masallardan <color=#EAC378>değilmiş.</color>" : Narration[index];
+        float width = Screen.width * (index == 2 ? .68f : .72f);
+        float height = narrationStyle.CalcHeight(new GUIContent(text), width);
+        float y = Screen.height * (index == 2 ? .49f : .72f) - height * .5f + (1 - alpha) * 24 * scale;
+        // Soft vignette and drifting golden motes frame the story without obscuring the tour.
+        GUI.color = new Color(.025f, .015f, .035f, alpha * (index == 2 ? .36f : .12f));
+        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+        for (int i = 0; i < 20; i++)
+        {
+            float edge = (20 - i) / 20f;
+            GUI.color = new Color(.02f, .01f, .025f, alpha * edge * .035f);
+            float inset = i * Screen.width * .008f;
+            GUI.DrawTexture(new Rect(inset, 0, Screen.width * .008f + 1, Screen.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(Screen.width - inset - Screen.width * .008f, 0, Screen.width * .008f + 1, Screen.height), Texture2D.whiteTexture);
+        }
+        for (int i = 0; i < 18; i++)
+        {
+            float x = Mathf.Repeat(i * .618034f, 1) * Screen.width;
+            float py = Mathf.Repeat(i * .137f - time * (.006f + (i % 3) * .002f), 1) * Screen.height;
+            float shimmer = .5f + .5f * Mathf.Sin(time * 1.5f + i * 2.4f);
+            GUI.color = new Color(1, .77f, .38f, alpha * shimmer * .35f);
+            DrawDiamond(x, py, (2 + i % 3) * scale);
+        }
+        // A feathered dark backing keeps the manuscript readable over moving scenery.
+        for (int i = 0; i < 12; i++)
+        {
+            float padding = (16 + i * 5) * scale;
+            GUI.color = new Color(0.025f, .018f, .012f, alpha * .045f);
+            GUI.DrawTexture(new Rect(0, y - padding, Screen.width, height + padding * 2), Texture2D.whiteTexture);
+        }
+        Rect rect = new Rect((Screen.width - width) * .5f, y, width, height);
+        GUI.color = new Color(0, 0, 0, alpha * .9f);
+        GUI.Label(new Rect(rect.x + 2 * scale, rect.y + 3 * scale, rect.width, rect.height), text, narrationStyle);
+        GUI.color = new Color(1f, .91f, .73f, alpha);
+        GUI.Label(rect, text, narrationStyle);
+        GUI.color = new Color(.92f, .73f, .4f, alpha * .8f);
+        float center = Screen.width * .5f;
+        float ornamentY = y - 28 * scale;
+        float reach = 180 * scale * Mathf.SmoothStep(0, 1, Mathf.Clamp01((time - start) / 1.6f));
+        GUI.DrawTexture(new Rect(center - reach, ornamentY, Mathf.Max(0, reach - 14 * scale), Mathf.Max(1, scale)), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(center + 14 * scale, ornamentY, Mathf.Max(0, reach - 14 * scale), Mathf.Max(1, scale)), Texture2D.whiteTexture);
+        DrawDiamond(center, ornamentY, 6 * scale);
+        DrawDiamond(center - 18 * scale, y + height + 25 * scale, 2.5f * scale);
+        DrawDiamond(center, y + height + 25 * scale, 4 * scale);
+        DrawDiamond(center + 18 * scale, y + height + 25 * scale, 2.5f * scale);
+    }
+
+    private static void DrawDiamond(float x, float y, float radius)
+    {
+        Matrix4x4 saved = GUI.matrix;
+        GUIUtility.RotateAroundPivot(45, new Vector2(x, y));
+        GUI.DrawTexture(new Rect(x - radius * .5f, y - radius * .5f, radius, radius), Texture2D.whiteTexture);
+        GUI.matrix = saved;
     }
 }
