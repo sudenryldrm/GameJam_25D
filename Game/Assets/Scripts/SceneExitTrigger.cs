@@ -29,6 +29,7 @@ public class SceneExitTrigger : MonoBehaviour
 
         // Latch before loading so multiple player colliders cannot load twice.
         triggered = true;
+        other.GetComponentInParent<PlayerController25D>().isInteracting = true;
         SceneManager.LoadSceneAsync(nextSceneName, LoadSceneMode.Single);
     }
 

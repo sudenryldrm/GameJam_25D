@@ -11,10 +11,21 @@ public class DwarfPursuer : MonoBehaviour
     private DwarfModelVisual visual;
     private float targetGroundY;
 
-    private void Awake()
+    private void Awake() { EnsureReferences(); }
+    private void OnEnable() { EnsureReferences(); }
+
+    public void Bind(DwarfChaseGroup group, int index)
     {
-        rb = GetComponent<Rigidbody>();
-        visual = GetComponent<DwarfModelVisual>();
+        chase = group;
+        order = index;
+        EnsureReferences();
+    }
+
+    private void EnsureReferences()
+    {
+        if (rb == null) rb = GetComponent<Rigidbody>();
+        if (visual == null) visual = GetComponent<DwarfModelVisual>();
+        if (chase == null) chase = GetComponentInParent<DwarfChaseGroup>();
         rb.isKinematic = true;
         rb.useGravity = false;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -23,6 +34,7 @@ public class DwarfPursuer : MonoBehaviour
 
     public void ResetToTrail()
     {
+        EnsureReferences();
         if (rb == null || chase == null || !chase.Ready) return;
         progress = chase.DesiredDistance(order);
         Vector3 grounded = chase.GroundPoint(chase.Evaluate(progress));
@@ -35,6 +47,7 @@ public class DwarfPursuer : MonoBehaviour
 
     private void FixedUpdate()
     {
+        EnsureReferences();
         if (chase == null || !chase.IsFollowing)
         {
             if (visual != null) visual.SetMoving(false);

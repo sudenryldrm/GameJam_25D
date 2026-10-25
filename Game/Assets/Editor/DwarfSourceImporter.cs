@@ -3,6 +3,8 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 using UnityEngine;
 
 [InitializeOnLoad]
@@ -13,7 +15,94 @@ public static class DwarfSourceImporter
     private const string AssetsFolder = "Assets/Resources/Dwarfs/";
     private static bool repairing;
 
-    static DwarfSourceImporter() { EditorApplication.delayCall += RestoreSources; }
+    static DwarfSourceImporter()
+    {
+        EditorApplication.delayCall += RestoreSources;
+        EditorApplication.delayCall += RepairChaseScripts;
+        EditorSceneManager.sceneOpened += OnSceneOpened;
+        EditorApplication.playModeStateChanged += OnPlayModeChanged;
+    }
+
+    private static void OnSceneOpened(Scene scene, OpenSceneMode mode)
+    { EditorApplication.delayCall += RepairChaseScripts; }
+
+    private static void OnPlayModeChanged(PlayModeStateChange state)
+    {
+        if (state == PlayModeStateChange.ExitingEditMode) RepairChaseScripts();
+    }
+
+    [MenuItem("Tools/Dwarfs/Repair Missing Chase Scripts")]
+    private static void RepairChaseScripts()
+    {
+        if (EditorApplication.isPlaying || EditorApplication.isCompiling) return;
+        if (EditorApplication.isUpdating)
+        { EditorApplication.delayCall += RepairChaseScripts; return; }
+        for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+        {
+            Scene scene = SceneManager.GetSceneAt(sceneIndex);
+            if (!scene.isLoaded || EditorSceneManager.IsPreviewScene(scene)) continue;
+            GameObject[] roots = scene.GetRootGameObjects();
+            PlayerController25D player = null;
+            Collider ground = null;
+            GameObject groupRoot = null;
+            foreach (GameObject root in roots)
+            {
+                if (root.name == "SevenDwarfs") groupRoot = root;
+                if (root.name == "Ground") ground = root.GetComponent<Collider>();
+                if (player == null) player = root.GetComponentInChildren<PlayerController25D>(true);
+            }
+            if (groupRoot == null || player == null || ground == null) continue;
+            // This repair is restricted to the authored seven-dwarf hierarchy.
+            // Do not strip missing scripts from unrelated scene objects.
+            var followers = new System.Collections.Generic.List<GameObject>();
+            for (int i = 1; i <= 7; i++)
+            {
+                Transform child = groupRoot.transform.Find("Dwarf_" + i.ToString("00"));
+                if (child != null && child.GetComponent<CapsuleCollider>() != null &&
+                    child.GetComponent<Rigidbody>() != null) followers.Add(child.gameObject);
+            }
+            if (followers.Count != 7) continue;
+            bool changed = false;
+            DwarfChaseGroup group = groupRoot.GetComponent<DwarfChaseGroup>();
+            if (group == null)
+            { RemoveMissingScripts(groupRoot); group = Undo.AddComponent<DwarfChaseGroup>(groupRoot); changed = true; }
+            changed |= SetReference(group, "target", player.transform);
+            changed |= SetReference(group, "walkableGround", ground);
+            for (int i = 0; i < followers.Count; i++)
+            {
+                GameObject dwarf = followers[i];
+                DwarfPursuer follower = dwarf.GetComponent<DwarfPursuer>();
+                if (follower == null)
+                { RemoveMissingScripts(dwarf); follower = Undo.AddComponent<DwarfPursuer>(dwarf); changed = true; }
+                changed |= SetReference(follower, "chase", group);
+                var serialized = new SerializedObject(follower);
+                SerializedProperty order = serialized.FindProperty("order");
+                if (order.intValue != i)
+                { order.intValue = i; serialized.ApplyModifiedProperties(); changed = true; }
+            }
+            if (!changed) continue;
+            EditorSceneManager.MarkSceneDirty(scene);
+            Debug.Log("Dwarfs: missing chase scripts repaired; player, ground and all seven followers reconnected. Save the scene (Ctrl+S).", groupRoot);
+        }
+    }
+
+    private static bool RemoveMissingScripts(GameObject target)
+    {
+        if (GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(target) == 0) return false;
+        Undo.RegisterCompleteObjectUndo(target, "Repair dwarf chase scripts");
+        GameObjectUtility.RemoveMonoBehavioursWithMissingScript(target);
+        return true;
+    }
+
+    private static bool SetReference(UnityEngine.Object component, string field, UnityEngine.Object value)
+    {
+        var serialized = new SerializedObject(component);
+        SerializedProperty property = serialized.FindProperty(field);
+        if (property.objectReferenceValue == value) return false;
+        property.objectReferenceValue = value;
+        serialized.ApplyModifiedProperties();
+        return true;
+    }
 
     [MenuItem("Tools/Dwarfs/Restore Uploaded Model Sources")]
     [MenuItem("Tools/Dwarfs/Repair Materials and Run Animation")]

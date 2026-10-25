@@ -1,17 +1,23 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
-// One shared imported model/material for every dwarf; generated visuals are not
-// saved into the scene. They are also shown in the editor after asset import.
 [ExecuteAlways]
 [DisallowMultipleComponent]
 public sealed class DwarfModelVisual : MonoBehaviour
 {
     [SerializeField, Min(0.1f)] private float visualHeight = 1.8f;
+    [SerializeField, Min(0f)] private float groundInset = 0.025f;
     private bool rebuildRequested;
     private GameObject model;
+    private Transform anchor;
     private Renderer placeholder;
+    private Renderer[] renderers;
+    private Transform hips;
+    private Vector3 hipsRestPosition;
+    private bool reportedMissingAssets;
+    private readonly List<Transform> feet = new List<Transform>();
     private PlayableGraph graph;
     private AnimationClipPlayable run;
     private bool moving;
@@ -20,65 +26,62 @@ public sealed class DwarfModelVisual : MonoBehaviour
     private Material runtimeMaterial;
     private float clipTime;
     private float clipLength;
-    private DwarfPursuer pursuer;
+    private Vector3 fittedLocalPosition;
+    private float soleOffset;
+
+    public bool Ready => model != null;
+
+    public void SetMoving(bool value) { moving = value; }
 
     private void Update()
     {
-        if (pursuer == null) pursuer = GetComponent<DwarfPursuer>();
-        if (rebuildRequested)
-        {
-            rebuildRequested = false;
-            RebuildVisual();
-        }
-        // Also handle entering play mode with domain/scene reload disabled.
-        if (model != null && builtForPlay != Application.IsPlaying(gameObject)) ReleaseVisual();
+        if (rebuildRequested) { rebuildRequested = false; RebuildVisual(); }
+        if (model != null && builtForPlay != Application.IsPlaying(gameObject)) RebuildVisual();
         if (model == null && Time.realtimeSinceStartup >= retryAt)
         {
             retryAt = Time.realtimeSinceStartup + 1f;
             BuildVisual();
         }
-        if (model != null && pursuer != null && Application.IsPlaying(gameObject))
-            SnapMeshFeet(pursuer.GroundY);
         if (run.IsValid() && graph.IsValid())
         {
-            if (moving && clipLength > 0f) clipTime = (clipTime + Time.deltaTime) % clipLength;
+            // Start from the fitted anchor every frame; never accumulate a bounds correction.
+            model.transform.localPosition = fittedLocalPosition;
+            if (builtForPlay && moving && clipLength > 0f)
+                clipTime = (clipTime + Time.deltaTime) % clipLength;
             run.SetTime(clipTime);
             graph.Evaluate(0f);
         }
     }
 
-    public void SetMoving(bool value) { moving = value; }
-
-    private void SnapMeshFeet(float groundY)
+    private void LateUpdate()
     {
-        Renderer[] renderers = model.GetComponentsInChildren<Renderer>(true);
-        if (renderers.Length == 0) return;
-        bool found = false;
-        float lowest = float.PositiveInfinity;
-        foreach (Renderer renderer in renderers)
+        if (!Ready || anchor == null) return;
+        // Generic run clips can retain horizontal hip translation even with root
+        // motion disabled. Only the chase Rigidbody should move the character.
+        model.transform.localPosition = fittedLocalPosition;
+        if (hips != null)
         {
-            if (!renderer.enabled) continue;
-            lowest = Mathf.Min(lowest, renderer.bounds.min.y);
-            found = true;
+            Vector3 pose = hips.localPosition;
+            hips.localPosition = new Vector3(hipsRestPosition.x, pose.y, hipsRestPosition.z);
         }
-        if (found && !float.IsInfinity(lowest))
-            model.transform.position += Vector3.up * Mathf.Clamp(groundY - lowest, -0.5f, 0.5f);
+        if (feet.Count > 0)
+        {
+            float delta = FloorY - (LowestFootBone() - soleOffset);
+            if (!float.IsNaN(delta) && !float.IsInfinity(delta))
+                model.transform.position += Vector3.up * Mathf.Clamp(delta, -visualHeight, visualHeight);
+        }
     }
+
+    private float FloorY => anchor.position.y - groundInset;
 
     public void RebuildVisual()
     {
         ReleaseVisual();
-        // DontSave children can outlive nonserialized C# fields after a script reload.
-        Transform anchor = transform.Find("Art_Anchor");
+        anchor = transform.Find("Art_Anchor");
         if (anchor != null)
             for (int i = anchor.childCount - 1; i >= 0; i--)
                 if (anchor.GetChild(i).name == "Gnome_Run_Visual")
-                {
-                    GameObject stale = anchor.GetChild(i).gameObject;
-                    stale.SetActive(false);
-                    if (Application.IsPlaying(gameObject)) Destroy(stale);
-                    else DestroyImmediate(stale);
-                }
+                    RemoveObject(anchor.GetChild(i).gameObject);
         retryAt = 0f;
     }
 
@@ -86,108 +89,146 @@ public sealed class DwarfModelVisual : MonoBehaviour
     {
         GameObject source = Resources.Load<GameObject>("Dwarfs/GnomeRun");
         Material material = Resources.Load<Material>("Dwarfs/Gnome");
-        Transform anchor = transform.Find("Art_Anchor");
         Texture2D diffuse = Resources.Load<Texture2D>("Dwarfs/GnomeDiffuse");
         Texture2D normal = Resources.Load<Texture2D>("Dwarfs/GnomeNormal");
-        if (source == null || material == null || diffuse == null || anchor == null) return;
-        // Resolve by asset path as well as GUID, so regenerated texture metas cannot
-        // leave a permanently white cached visual after first import.
+        anchor = transform.Find("Art_Anchor");
+        if (source == null || material == null || diffuse == null || anchor == null)
+        {
+            if (!reportedMissingAssets)
+            {
+                Debug.LogWarning("Dwarf assets are not imported yet. Stop Play Mode and use Tools > Dwarfs > Repair Materials and Run Animation.", this);
+                reportedMissingAssets = true;
+            }
+            return;
+        }
+        reportedMissingAssets = false;
+        AnimationClip clip = Resources.Load<AnimationClip>("Dwarfs/GnomeRunAnimation");
+        if (clip == null)
+            foreach (AnimationClip candidate in Resources.LoadAll<AnimationClip>("Dwarfs/GnomeRun"))
+                if (!candidate.name.StartsWith("__preview__")) { clip = candidate; break; }
+
+        builtForPlay = Application.IsPlaying(gameObject);
         runtimeMaterial = new Material(material) { hideFlags = HideFlags.DontSave };
         if (runtimeMaterial.HasProperty("_BaseMap")) runtimeMaterial.SetTexture("_BaseMap", diffuse);
         if (runtimeMaterial.HasProperty("_MainTex")) runtimeMaterial.SetTexture("_MainTex", diffuse);
         if (normal != null && runtimeMaterial.HasProperty("_BumpMap"))
-        {
-            runtimeMaterial.SetTexture("_BumpMap", normal);
-            runtimeMaterial.EnableKeyword("_NORMALMAP");
-        }
-        builtForPlay = Application.IsPlaying(gameObject);
+        { runtimeMaterial.SetTexture("_BumpMap", normal); runtimeMaterial.EnableKeyword("_NORMALMAP"); }
 
         model = Instantiate(source, anchor, false);
         model.name = "Gnome_Run_Visual";
         foreach (Transform child in model.GetComponentsInChildren<Transform>(true))
+        {
             child.gameObject.hideFlags = HideFlags.DontSave;
+            string name = child.name;
+            if (name.EndsWith("LeftFoot") || name.EndsWith("RightFoot") ||
+                name.EndsWith("LeftToeBase") || name.EndsWith("RightToeBase") ||
+                name.EndsWith("LeftToe_End") || name.EndsWith("RightToe_End")) feet.Add(child);
+            if (name.EndsWith(":Hips") || name == "Hips") hips = child;
+        }
         model.transform.localPosition = Vector3.zero;
-        model.transform.localRotation = Quaternion.identity;
-        model.transform.localScale = Vector3.one;
-
-        Renderer[] renderers = model.GetComponentsInChildren<Renderer>(true);
-        bool hasBounds = false;
-        Bounds bounds = default;
+        model.transform.localRotation = source.transform.localRotation;
+        model.transform.localScale = source.transform.localScale;
+        renderers = model.GetComponentsInChildren<Renderer>(true);
         foreach (Renderer renderer in renderers)
         {
             Material[] slots = renderer.sharedMaterials;
             if (slots.Length == 0) slots = new Material[1];
             for (int i = 0; i < slots.Length; i++) slots[i] = runtimeMaterial;
             renderer.sharedMaterials = slots;
-            if (!hasBounds) { bounds = renderer.bounds; hasBounds = true; }
-            else bounds.Encapsulate(renderer.bounds);
         }
-        if (!hasBounds || bounds.size.y < 0.001f) { ReleaseVisual(); return; }
-
-        // Enlarge the art while preserving its grounded feet and chase physics.
+        foreach (SkinnedMeshRenderer skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            skin.enabled = true;
+            skin.forceRenderingOff = false;
+            skin.updateWhenOffscreen = true;
+        }
+        // Use the source mesh bounds before playing any animation. These are
+        // stable and do not depend on culling or BakeMesh scale conventions.
+        if (!TrySourceBounds(out Bounds bounds) || bounds.size.y < 0.000001f)
+        { ReleaseVisual(); return; }
         model.transform.localScale *= visualHeight / bounds.size.y;
-        bounds = renderers[0].bounds;
-        foreach (Renderer renderer in renderers) bounds.Encapsulate(renderer.bounds);
-        CapsuleCollider bodyCollider = GetComponent<CapsuleCollider>();
-        // The chase root is centered above the floor. Align the model's actual
-        // lowest mesh point with the capsule's bottom, not the root's pivot.
-        float groundY = bodyCollider != null
-            ? transform.position.y + bodyCollider.center.y - bodyCollider.height * 0.5f
-            : transform.position.y;
+        if (!TrySourceBounds(out bounds)) { ReleaseVisual(); return; }
         model.transform.position += new Vector3(anchor.position.x - bounds.center.x,
-            groundY - bounds.min.y, anchor.position.z - bounds.center.z);
-
+            FloorY - bounds.min.y, anchor.position.z - bounds.center.z);
+        fittedLocalPosition = model.transform.localPosition;
+        if (feet.Count > 0)
+            soleOffset = Mathf.Clamp(LowestFootBone() - FloorY,
+                0f, visualHeight * 0.15f);
+        if (hips != null) hipsRestPosition = hips.localPosition;
         Transform old = transform.Find("Capsule_Placeholder");
         placeholder = old != null ? old.GetComponent<Renderer>() : null;
         if (placeholder != null) placeholder.enabled = false;
-
-        if (!Application.IsPlaying(gameObject)) return;
-        AnimationClip clip = Resources.Load<AnimationClip>("Dwarfs/GnomeRunAnimation");
-        if (clip == null) foreach (AnimationClip candidate in Resources.LoadAll<AnimationClip>("Dwarfs/GnomeRun"))
-            if (!candidate.name.StartsWith("__preview__")) { clip = candidate; break; }
-        if (clip == null)
-        {
-            Debug.LogError("Gnome run animation was not imported.", this);
-            ReleaseVisual();
-            return;
-        }
+        // A missing run clip must not make a successfully imported model disappear.
+        if (clip == null || clip.length <= 0f)
+        { Debug.LogWarning("Dwarf model is visible but its run clip needs reimporting.", this); return; }
         Animator animator = model.GetComponent<Animator>();
         if (animator == null) animator = model.AddComponent<Animator>();
         animator.applyRootMotion = false;
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         graph = PlayableGraph.Create("Dwarf Run");
         graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
-        clipLength = clip.length;
-        clipTime = 0f;
-        AnimationPlayableOutput output = AnimationPlayableOutput.Create(graph, "Run", animator);
         run = AnimationClipPlayable.Create(graph, clip);
         run.SetApplyFootIK(false);
         run.SetSpeed(0d);
-        output.SetSourcePlayable(run);
+        AnimationPlayableOutput.Create(graph, "Run", animator).SetSourcePlayable(run);
+        clipLength = clip.length;
+        clipTime = 0f;
         graph.Play();
         graph.Evaluate(0f);
+    }
+
+    private float LowestFootBone()
+    {
+        float y = float.PositiveInfinity;
+        foreach (Transform foot in feet) if (foot != null) y = Mathf.Min(y, foot.position.y);
+        return y;
+    }
+
+    private bool TrySourceBounds(out Bounds bounds)
+    {
+        bounds = default;
+        bool found = false;
+        foreach (Renderer renderer in renderers)
+        {
+            Mesh mesh = null;
+            if (renderer is SkinnedMeshRenderer skin) mesh = skin.sharedMesh;
+            else if (renderer.TryGetComponent(out MeshFilter filter)) mesh = filter.sharedMesh;
+            if (mesh == null) continue;
+            Bounds local = mesh.bounds;
+            for (int corner = 0; corner < 8; corner++)
+            {
+                Vector3 offset = new Vector3((corner & 1) == 0 ? -local.extents.x : local.extents.x,
+                    (corner & 2) == 0 ? -local.extents.y : local.extents.y,
+                    (corner & 4) == 0 ? -local.extents.z : local.extents.z);
+                Vector3 point = renderer.transform.TransformPoint(local.center + offset);
+                if (!found) { bounds = new Bounds(point, Vector3.zero); found = true; }
+                else bounds.Encapsulate(point);
+            }
+        }
+        return found;
     }
 
     private void OnEnable() { RebuildVisual(); }
     private void OnValidate() { rebuildRequested = true; }
     private void OnDisable() { ReleaseVisual(); }
 
+    private void RemoveObject(Object value)
+    {
+        if (value == null) return;
+        if (value is GameObject go) go.SetActive(false);
+        if (Application.IsPlaying(gameObject)) Destroy(value); else DestroyImmediate(value);
+    }
+
     private void ReleaseVisual()
     {
         if (graph.IsValid()) graph.Destroy();
         if (placeholder != null) placeholder.enabled = true;
-        if (model != null)
-        {
-            if (Application.IsPlaying(gameObject)) Destroy(model);
-            else DestroyImmediate(model);
-        }
+        RemoveObject(model);
+        RemoveObject(runtimeMaterial);
         model = null;
-        if (runtimeMaterial != null)
-        {
-            if (Application.IsPlaying(gameObject)) Destroy(runtimeMaterial);
-            else DestroyImmediate(runtimeMaterial);
-        }
         runtimeMaterial = null;
+        hips = null;
+        renderers = null;
+        feet.Clear();
     }
 }
-

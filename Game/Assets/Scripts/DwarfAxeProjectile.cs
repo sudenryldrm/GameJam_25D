@@ -1,43 +1,58 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-// Coloured low-poly axe projectile with trigger and proximity hit detection.
+// Low, straight throws: jump over the visible axe, without player prediction.
 [RequireComponent(typeof(Rigidbody), typeof(SphereCollider))]
 public sealed class DwarfAxeProjectile : MonoBehaviour
 {
-    private const float Lifetime = 7f;
+    private const float Lifetime = 5f;
+    private const float Speed = 7.5f;
+    private const float HitRadius = 0.22f;
+    private static readonly List<DwarfAxeProjectile> active = new List<DwarfAxeProjectile>();
+    private readonly Collider[] contacts = new Collider[32];
     private Rigidbody body;
+    private Transform spin;
     private PlayerController25D target;
+    private float direction;
     private bool impacted;
-    private float age;
 
-    public static void Spawn(Vector3 origin, Vector3 destination, float flightTime, PlayerController25D target)
+    public static void SpawnAlongGround(Vector3 origin, float facing, PlayerController25D target)
     {
         GameObject axe = new GameObject("Dwarf_Thrown_Axe");
         axe.transform.position = origin;
-        axe.transform.localScale = Vector3.one * 0.72f;
-
         SphereCollider hitbox = axe.AddComponent<SphereCollider>();
-        hitbox.radius = 0.48f;
+        hitbox.radius = HitRadius;
         hitbox.isTrigger = true;
-
         Rigidbody rb = axe.AddComponent<Rigidbody>();
-        rb.useGravity = true;
-        rb.mass = 0.65f;
-        rb.linearDamping = 0.02f;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.useGravity = false;
+        rb.isKinematic = true;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
-
-        BuildVisual(axe.transform);
+        GameObject visual = new GameObject("Spinning_Axe_Visual");
+        visual.transform.SetParent(axe.transform, false);
+        visual.transform.localScale = Vector3.one * 0.68f;
+        BuildVisual(visual.transform);
         DwarfAxeProjectile projectile = axe.AddComponent<DwarfAxeProjectile>();
         projectile.body = rb;
+        projectile.spin = visual.transform;
+        projectile.direction = facing < 0f ? -1f : 1f;
         projectile.target = target;
-
-        float time = Mathf.Max(0.2f, flightTime);
-        Vector3 velocity = (destination - origin) / time - Physics.gravity * (0.5f * time);
-        velocity.z = 0f;
-        rb.linearVelocity = velocity;
-        rb.angularVelocity = new Vector3(0f, 0f, -7f);
+        active.Add(projectile);
         Destroy(axe, Lifetime);
+    }
+
+    public static void ClearFor(PlayerController25D player)
+    {
+        for (int i = active.Count - 1; i >= 0; i--)
+        {
+            DwarfAxeProjectile axe = active[i];
+            if (axe == null) { active.RemoveAt(i); continue; }
+            if (axe.target != player) continue;
+            active.RemoveAt(i);
+            axe.impacted = true;
+            axe.gameObject.SetActive(false);
+            Destroy(axe.gameObject);
+        }
     }
 
     private static void BuildVisual(Transform root)
@@ -79,42 +94,45 @@ public sealed class DwarfAxeProjectile : MonoBehaviour
     private void FixedUpdate()
     {
         if (impacted || target == null) return;
-        age += Time.fixedDeltaTime;
-        // A 2.5D game can have thin or offset colliders; proximity detection makes
-        // the attack reliable even if the rendered axe passes between physics steps.
-        Vector3 closest = target.GetComponent<Collider>() != null
-            ? target.GetComponent<Collider>().ClosestPoint(transform.position)
-            : target.transform.position;
-        if (Vector3.Distance(closest, transform.position) <= 0.62f)
-            HitTarget();
+        if (target.isInteracting || LevelIntroCutscene.IsPlaying) return;
+        Vector3 next = body.position + Vector3.right * (direction * Speed * Time.fixedDeltaTime);
+        // Sweep only the small physical radius over this physics step. This avoids
+        // tunnelling without the old 0.62-unit invisible proximity damage area.
+        int count = Physics.OverlapCapsuleNonAlloc(body.position, next, HitRadius,
+            contacts, ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < count; i++)
+            if (contacts[i].GetComponentInParent<PlayerController25D>() == target)
+            { HitTarget(); return; }
+        body.MovePosition(next);
+        if (spin != null) spin.Rotate(0f, 0f, -direction * 540f * Time.fixedDeltaTime, Space.Self);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (impacted) return;
-        PlayerController25D player = other.GetComponentInParent<PlayerController25D>();
-        if (player != null && player == target) HitTarget();
+        if (impacted || target == null || target.isInteracting ||
+            LevelIntroCutscene.IsPlaying || Time.timeScale <= 0f) return;
+        if (other.GetComponentInParent<PlayerController25D>() == target) HitTarget();
     }
 
     private void HitTarget()
     {
-        if (impacted) return;
+        if (impacted || target == null || target.isInteracting) return;
         impacted = true;
-        if (target != null)
-        {
-            if (Scene2ChaseController.Instance != null)
-                Scene2ChaseController.Instance.HitPlayer(target, "Cüce baltası çarptı!");
-            else
-                target.Respawn();
-        }
+        gameObject.SetActive(false);
+        if (Scene2ChaseController.Instance != null)
+            Scene2ChaseController.Instance.HitPlayer(target, "Cüce baltası çarptı!");
+        else target.Respawn();
         Destroy(gameObject);
     }
 
     private void OnDestroy()
     {
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        foreach (Renderer renderer in renderers)
+        active.Remove(this);
+        // The five visual parts share materials; destroy each allocation once.
+        var materials = new HashSet<Material>();
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
             foreach (Material material in renderer.sharedMaterials)
-                if (material != null) Destroy(material);
+                if (material != null) materials.Add(material);
+        foreach (Material material in materials) Destroy(material);
     }
 }
