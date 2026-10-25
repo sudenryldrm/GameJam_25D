@@ -68,6 +68,7 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
         sun.transform.rotation = Quaternion.Euler(38, -32, 0);
         cameraFollow.BeginCameraSequence();
         Running = true; IsPlaying = true; completedThisRun = true; restored = false;
+        FirstLevelMusic.Cover(true);
         beganAt = Time.unscaledTime; elapsed = 0;
         Debug.Log("OPENING started: three scenery maps, 30 seconds with story narration.");
         SetShot(0); Evaluate(0);
@@ -172,6 +173,7 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
     {
         if (!Running) return;
         Running = false; IsPlaying = false;
+        FirstLevelMusic.Cover(false);
         Debug.Log("OPENING completed at " + elapsed.ToString("0.00") + " seconds");
         RestoreEnvironment();
         RestorePlayer();
