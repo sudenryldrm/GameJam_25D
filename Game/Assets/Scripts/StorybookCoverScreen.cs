@@ -12,7 +12,8 @@ public sealed class StorybookCoverScreen : MonoBehaviour
     private Texture2D artwork, glow;
     private Action onStart;
     private PlayerController25D player;
-    private float previousTimeScale, shownAt, closeAt = -1;
+    private const float OpenDuration = 1.65f, CloseDuration = 1.4f, EndingHold = 8f;
+    private float previousTimeScale, screenAge, closeAt = -1;
     private bool previousInteraction, visible, ending, loading;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -26,7 +27,7 @@ public sealed class StorybookCoverScreen : MonoBehaviour
         if (visible) return;
         artwork = Resources.Load<Texture2D>(final ? "UI/Ending" : "UI/StartCover");
         if (!artwork) { Debug.LogError("Storybook cover artwork is missing."); begin?.Invoke(); return; }
-        ending = final; onStart = begin; shownAt = Time.unscaledTime; closeAt = -1;
+        ending = final; onStart = begin; screenAge = 0; closeAt = -1; loading = false;
         player = FindFirstObjectByType<PlayerController25D>();
         previousTimeScale = Time.timeScale;
         previousInteraction = player && player.isInteracting;
@@ -52,14 +53,16 @@ public sealed class StorybookCoverScreen : MonoBehaviour
     private void Update()
     {
         if (!visible || loading) return;
-        float age = Time.unscaledTime - shownAt;
-        if (ending && age >= 8 && closeAt < 0) closeAt = Time.unscaledTime;
-        if (!ending && closeAt < 0 && age > .85f && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        // Keep the opening visible even when first-use asset loading stalls a frame.
+        screenAge += Mathf.Min(Time.unscaledDeltaTime, .1f);
+        float age = screenAge;
+        if (ending && age >= EndingHold && closeAt < 0) closeAt = age;
+        if (!ending && closeAt < 0 && age > OpenDuration + .25f && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             Vector2 mouse = Mouse.current.position.ReadValue(); mouse.y = Screen.height - mouse.y;
-            if (OverPortrait(mouse, BookRect())) closeAt = Time.unscaledTime;
+            if (OverPortrait(mouse, BookRect())) closeAt = age;
         }
-        if (closeAt < 0 || Time.unscaledTime - closeAt < (ending ? 2.1f : 1.05f)) return;
+        if (closeAt < 0 || age - closeAt < CloseDuration + (ending ? .8f : 0)) return;
         if (ending)
         {
             loading = true; gameStarted = false;
@@ -106,17 +109,26 @@ public sealed class StorybookCoverScreen : MonoBehaviour
             GUI.matrix = Matrix4x4.identity; GUI.depth = -3000;
             GUI.color = new Color(.025f, .018f, .025f, 1);
             GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            float age = Time.unscaledTime - shownAt;
-            float closing = closeAt < 0 ? 0 : Mathf.SmoothStep(0, 1, Mathf.Clamp01((Time.unscaledTime - closeAt) / 1.05f));
-            float open = ending ? 1 - closing : (1 - Mathf.Pow(1 - Mathf.Clamp01(age / .8f), 3)) * (1 - closing);
+            float age = screenAge;
+            float closing = closeAt < 0 ? 0 : Mathf.Clamp01((age - closeAt) / CloseDuration);
+            float opening = ending ? 1 : Mathf.Clamp01((age - .2f) / OpenDuration);
+            float leftOpen = Mathf.SmoothStep(0, 1, Mathf.Clamp01(opening / .85f));
+            float rightOpen = Mathf.SmoothStep(0, 1, Mathf.Clamp01((opening - .12f) / .88f));
+            leftOpen *= 1 - Mathf.SmoothStep(0, 1, Mathf.Clamp01((closing - .14f) / .86f));
+            rightOpen *= 1 - Mathf.SmoothStep(0, 1, Mathf.Clamp01(closing / .86f));
+            float open = Mathf.Max(leftOpen, rightOpen);
             Rect book = BookRect();
             float half = book.width * .5f, spine = book.center.x;
-            float left = half * Mathf.Lerp(.025f, 1, open);
-            float right = half * Mathf.Lerp(.025f, 1, open);
-            GUI.color = new Color(Mathf.Lerp(.55f, 1, open), Mathf.Lerp(.55f, 1, open), Mathf.Lerp(.55f, 1, open), Mathf.Clamp01(open * 5));
+            float left = half * Mathf.Max(.008f, Mathf.Sin(leftOpen * Mathf.PI * .5f));
+            float right = half * Mathf.Max(.008f, Mathf.Sin(rightOpen * Mathf.PI * .5f));
+            // Warm light behind the book and changing page shade reveal the hinge motion.
+            GUI.color = new Color(1, .69f, .31f, .15f * open);
+            GUI.DrawTexture(new Rect(book.x - book.width * .15f, book.y - book.height * .1f, book.width * 1.3f, book.height * 1.2f), glow);
+            GUI.color = new Color(Mathf.Lerp(.4f, 1, leftOpen), Mathf.Lerp(.34f, 1, leftOpen), Mathf.Lerp(.28f, 1, leftOpen), Mathf.Clamp01(open * 8));
             GUI.DrawTextureWithTexCoords(new Rect(spine - left, book.y, left, book.height), artwork, new Rect(0, 0, .5f, 1));
+            GUI.color = new Color(Mathf.Lerp(.4f, 1, rightOpen), Mathf.Lerp(.34f, 1, rightOpen), Mathf.Lerp(.28f, 1, rightOpen), Mathf.Clamp01(open * 8));
             GUI.DrawTextureWithTexCoords(new Rect(spine, book.y, right, book.height), artwork, new Rect(.5f, 0, .5f, 1));
-            if (open > .995f && closeAt < 0)
+            if (Mathf.Min(leftOpen, rightOpen) > .995f && closeAt < 0)
             {
                 DrawTitleWave(book, age);
                 if (!ending) DrawPortraitHint(book, age);
@@ -132,17 +144,23 @@ public sealed class StorybookCoverScreen : MonoBehaviour
         float top = ending ? .23f : .09f, bottom = ending ? .76f : .225f;
         Rect band = new Rect(book.x + book.width * left, book.y + book.height * top, book.width * (right - left), book.height * (bottom - top));
         GUI.BeginGroup(band);
-        GUI.color = Color.white;
-        const int slices = 100;
+        const int slices = 120;
         for (int i = 0; i < slices; i++)
         {
             float u = i / (float)slices;
-            float shift = Mathf.Sin(u * Mathf.PI * 3 + time * 1.15f) * book.height * .0017f;
+            float shift = Mathf.Sin(u * Mathf.PI * 3 + time * 1.3f) * book.height * .0035f;
+            float shimmer = Mathf.Pow(.5f + .5f * Mathf.Cos(u * Mathf.PI * 2 - time * .8f), 6);
+            GUI.color = new Color(1 + shimmer * .22f, 1 + shimmer * .13f, 1 + shimmer * .035f, 1);
             // Sample displaced UVs into fixed strips, avoiding gaps between strips.
             GUI.DrawTextureWithTexCoords(new Rect(u * band.width, 0, band.width / slices + .5f, band.height), artwork,
                 new Rect(left + u * (right - left), 1 - bottom + shift / book.height, (right - left) / slices, bottom - top));
         }
         GUI.EndGroup();
+        // A slow, feathered pool of golden light travels across the printed lettering.
+        float lightX = band.x + band.width * (.5f + .42f * Mathf.Sin(time * .38f));
+        float lightWidth = band.width * (ending ? .85f : .32f);
+        GUI.color = new Color(1, .77f, .38f, .17f + .04f * Mathf.Sin(time * 1.2f));
+        GUI.DrawTexture(new Rect(lightX - lightWidth * .5f, band.y - band.height * .35f, lightWidth, band.height * 1.7f), glow);
     }
 
     private void DrawPortraitHint(Rect book, float time)
