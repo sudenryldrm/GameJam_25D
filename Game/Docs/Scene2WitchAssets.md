@@ -1,9 +1,11 @@
-# Scene 2 witch asset integration
+# Scene 2 witch visual
 
-The PoisonApple prefab now uses the supplied elma.fbx and the same body/stem materials as the lore apples. Projectile art is 0.4 world units high, versus 0.8 for a lore apple. Idle bob and tilt are disabled on projectiles. Existing Rigidbody, SphereCollider, PoisonApple collision/respawn/cloud logic and WitchBossAI throw timing are preserved.
+Scene2_WitchChase now uses a colored witch model and its Idle animation. The saved `Witch_ImportedVisual` prefab instance is a child of `WitchBoss/Witch_ArtAnchor`. The boss's purple capsule renderer is disabled. `WitchBossAI`, `PoisonApple`, the projectile prefab, the throw point and the chase controller were not edited.
 
-The uploaded `witch Flying(1).fbx` contains one skinned geometry and an animation stack, but zero Material, Texture or LayerElementMaterial records. Its UVs occupy one tile (U approximately -1..0, V 0..1). The uploaded skin, teeth, eye and three clothing texture sets therefore have no preserved face/material assignments in this FBX. Correct assignment of all maps requires a source FBX/BLEND preserving those assignments and UV tiles; it cannot be recovered exactly from filenames alone. The witch replacement is pending that source; existing witch gameplay is retained.
+The new visual is `Assets/Models/QuaterniusWitch/QuaterniusWitchVisual.prefab`. The included FBX was converted from the original GLB. Six source colors are assigned to explicit URP materials, so the visual does not depend on missing external textures. `WitchFlightVisual` plays the model's own Generic Idle clip, avoids root motion and cleans up its PlayableGraph when disabled. The boss's existing hover and chase movement make the witch fly through the scene.
 
-Input FBX SHA-256: `4be5e4c1891068a4652130f6239dbcb7c96983195317cc6b3da289ed4c1aa6aa`.
+Source and license: ["Witch" by Quaternius on Poly Pizza](https://poly.pizza/m/QBEOV9ZUT8), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Credit Quaternius in the game's credits. Original GLB and converted FBX SHA-256 values can be checked against the asset files.
 
-Validation: projectile physics/gameplay YAML documents are unchanged; model/material GUIDs match existing lore apple assets. Unity Play Mode validation is pending because Unity is unavailable in this environment.
+Unity 6000.3.10f1 imported the FBX and saved the prefab. In an isolated validation project it loaded a copy of Scene2_WitchChase, found five colored renderers and a valid Generic avatar, confirmed the capsule hidden, and measured approximately 0.98 degrees of arm movement from the Idle clip. The isolated check does not cover full game Play Mode, camera framing or projectile gameplay.
+
+In the actual project, reopen Scene2_WitchChase and test Play Mode: the colored witch should be visible at the boss position, float and follow the player, face the correct direction, continue its Idle animation, and throw poison apples with the same timing and effects. Check that no old purple capsule or old WitchVisual model appears and that the player can finish or restart the scene as before. If an already open Unity Editor cached the old scene, close and reopen the scene before testing.

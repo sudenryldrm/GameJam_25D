@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -5,62 +6,61 @@ using UnityEngine.SceneManagement;
 
 public static class WitchModelSetup
 {
+    private const string ScenePath = "Assets/Scene2_WitchChase.unity";
+    private const string PrefabPath = "Assets/Models/QuaterniusWitch/QuaterniusWitchVisual.prefab";
+
+    public static void InstallBatch()
+    {
+        EditorSceneManager.OpenScene(ScenePath);
+        Install();
+    }
+
     [MenuItem("Tools/Witch/Install Flying Witch in Scene 2")]
     public static void Install()
     {
-        const string modelPath = "Assets/Models/Witch/Sketchfab.fbx";
-        const string flightPath = "Assets/Models/Witch/WitchFlying.fbx";
-        var model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
-        var flightModel = AssetDatabase.LoadAssetAtPath<GameObject>(flightPath);
-        if (model == null || flightModel == null)
-        {
-            Debug.LogError("Copy Sketchfab.fbx and WitchFlying.fbx into Assets/Models/Witch/ first.");
-            return;
-        }
         Scene scene = SceneManager.GetActiveScene();
-        if (!scene.name.Contains("Scene2_WitchChase"))
-        {
-            Debug.LogError("Open Scene2_WitchChase before running the witch installer.");
-            return;
-        }
-        var boss = Object.FindFirstObjectByType<WitchBossAI>();
-        if (boss == null) { Debug.LogError("WitchBossAI not found."); return; }
+        if (scene.path != ScenePath) throw new InvalidOperationException("Open Scene2_WitchChase first.");
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        if (prefab == null) throw new InvalidOperationException("Missing Quaternius witch prefab.");
+        WitchBossAI boss = UnityEngine.Object.FindFirstObjectByType<WitchBossAI>();
+        if (boss == null) throw new InvalidOperationException("WitchBossAI not found.");
         Transform anchor = boss.transform.Find("Witch_ArtAnchor");
         if (anchor == null)
         {
-            var anchorObject = new GameObject("Witch_ArtAnchor");
-            anchor = anchorObject.transform;
-            Undo.SetTransformParent(anchor, boss.transform, "Witch anchor");
-            anchor.localPosition = Vector3.zero;
+            var go = new GameObject("Witch_ArtAnchor");
+            Undo.RegisterCreatedObjectUndo(go, "Witch art anchor");
+            anchor = go.transform;
+            Undo.SetTransformParent(anchor, boss.transform, "Parent witch art");
+            anchor.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
         }
         Transform previous = anchor.Find("Witch_ImportedVisual");
-        if (previous != null) Undo.DestroyObjectImmediate(previous.gameObject);
-        var visual = (GameObject)PrefabUtility.InstantiatePrefab(model, scene);
-        Undo.RegisterCreatedObjectUndo(visual, "Install witch model");
+        var visual = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+        Undo.RegisterCreatedObjectUndo(visual, "Install colored witch");
+        Vector3 position = visual.transform.localPosition;
+        Quaternion rotation = visual.transform.localRotation;
+        Vector3 scale = visual.transform.localScale;
+        Undo.SetTransformParent(visual.transform, anchor, "Parent colored witch");
         visual.name = "Witch_ImportedVisual";
-        Undo.SetTransformParent(visual.transform, anchor, "Parent witch model");
-        visual.transform.localPosition = Vector3.zero;
-        visual.transform.localRotation = Quaternion.identity;
-        visual.transform.localScale = Vector3.one;
-        foreach (var collider in visual.GetComponentsInChildren<Collider>(true))
-            collider.enabled = false;
-        AnimationClip flight = null;
-        foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(flightPath))
-            if (asset is AnimationClip clip && !clip.name.StartsWith("__preview__")) { flight = clip; break; }
-        if (flight != null)
+        visual.transform.SetLocalPositionAndRotation(position, rotation);
+        visual.transform.localScale = scale;
+        Animator animator = visual.GetComponentInChildren<Animator>(true);
+        if (animator == null || animator.avatar == null || !animator.avatar.isValid ||
+            visual.GetComponent<WitchFlightVisual>() == null ||
+            visual.GetComponentsInChildren<Renderer>(true).Length == 0)
         {
-            var targetAnimator = visual.GetComponentInChildren<Animator>(true);
-            if (targetAnimator != null)
-            {
-                var flightPlayer = Undo.AddComponent<WitchFlightVisual>(targetAnimator.gameObject);
-                flightPlayer.SetClip(flight);
-                EditorUtility.SetDirty(flightPlayer);
-            }
-            else Debug.LogWarning("Imported model has no Animator; animation needs rig setup.");
+            Undo.DestroyObjectImmediate(visual);
+            throw new InvalidOperationException("Colored witch prefab is missing its rig, renderer or animation player.");
         }
-        else Debug.LogWarning("No animation clip found in WitchFlying.fbx.");
+        PrefabUtility.RecordPrefabInstancePropertyModifications(visual.transform);
+        if (previous != null) Undo.DestroyObjectImmediate(previous.gameObject);
+        MeshRenderer capsule = boss.GetComponent<MeshRenderer>();
+        if (capsule != null)
+        {
+            Undo.RecordObject(capsule, "Hide witch capsule");
+            capsule.enabled = false;
+        }
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
-        Debug.Log("Witch visual installed and Scene 2 saved. Check materials, orientation and animation in Play Mode.");
+        Debug.Log("Colored witch installed in Scene 2; AI and apple mechanics remain on WitchBoss.");
     }
 }
