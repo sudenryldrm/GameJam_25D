@@ -19,9 +19,9 @@ public class DwarfChaseGroup : MonoBehaviour
     private Rigidbody playerBody;
     private DwarfPursuer[] dwarfs;
     [Header("Cüce Baltaları")]
-    [SerializeField] private float firstAxeDelay = 2f;
-    [SerializeField] private float minimumAxeInterval = 2.5f;
-    [SerializeField] private float maximumAxeInterval = 3.5f;
+    [SerializeField] private float firstAxeDelay = 4f;
+    [SerializeField] private float minimumAxeInterval = 3.5f;
+    [SerializeField] private float maximumAxeInterval = 4.5f;
     private float axeThrowTimer;
     public bool Ready { get; private set; }
     public bool IsFollowing => Ready && player != null && !player.isInteracting && Time.timeScale > 0f;
@@ -62,25 +62,19 @@ public class DwarfChaseGroup : MonoBehaviour
 
     private void Update()
     {
-        if (player == null || player.isInteracting || Time.timeScale <= 0f || dwarfs == null || dwarfs.Length == 0) return;
+        if (!IsFollowing || LevelIntroCutscene.IsPlaying || dwarfs == null || dwarfs.Length == 0) return;
         axeThrowTimer -= Time.deltaTime;
         if (axeThrowTimer > 0f) return;
 
         DwarfPursuer thrower = dwarfs[Random.Range(0, dwarfs.Length)];
         if (thrower != null && target != null)
         {
-            Vector3 origin = thrower.transform.position + Vector3.up * 0.8f +
-                Vector3.right * (target.position.x >= thrower.transform.position.x ? 0.25f : -0.25f);
-            origin.z = target.position.z;
-            float flightTime = Mathf.Clamp(Mathf.Abs(target.position.x - origin.x) / 13f, 0.45f, 1.05f);
-            Vector3 destination = target.position;
-            if (playerBody != null)
-            {
-                destination.x += Mathf.Clamp(playerBody.linearVelocity.x * flightTime, -4f, 4f);
-                destination.y += Mathf.Clamp(playerBody.linearVelocity.y * flightTime * 0.35f, -1.5f, 1.5f);
-            }
-            DwarfAxeProjectile.Spawn(origin, destination, flightTime, player);
-            Debug.Log("Dwarf axe thrown at player.", thrower);
+            // Throw along the floor in the dwarf's facing direction. The player's
+            // position, jump height and velocity never steer the projectile.
+            float direction = thrower.transform.forward.x < -0.01f ? -1f : 1f;
+            Vector3 origin = GroundPoint(thrower.transform.position);
+            origin += new Vector3(direction * 0.75f, 0.4f, 0f);
+            DwarfAxeProjectile.SpawnAlongGround(origin, direction, player);
         }
         axeThrowTimer = Random.Range(Mathf.Max(1f, minimumAxeInterval),
             Mathf.Max(minimumAxeInterval, maximumAxeInterval));
@@ -112,6 +106,7 @@ public class DwarfChaseGroup : MonoBehaviour
     {
         if (player == null) return;
         Ready = false;
+        DwarfAxeProjectile.ClearFor(player);
         axeThrowTimer = firstAxeDelay;
         trail.Clear();
         Vector3 feet = PlayerFeet();
@@ -145,5 +140,6 @@ public class DwarfChaseGroup : MonoBehaviour
     private void OnDestroy()
     {
         if (player != null) player.Respawned -= ResetTrail;
+        DwarfAxeProjectile.ClearFor(player);
     }
 }
