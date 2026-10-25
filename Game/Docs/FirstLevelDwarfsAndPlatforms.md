@@ -32,3 +32,7 @@ Sahne bağlantıları ve zıplama mesafeleri sayısal olarak kontrol edilir; Uni
 - Elma hareketi ve ağaç kütüğü görünürlük düzenlemeleri korunur.
 
 Doğrulama: bütün oynanış C# dosyaları sözdizimi kontrolünden geçti. Sahnedeki yedi cüce kökü ve bağlantıları korundu; sahnede yalnızca yedi boy alanı değişti. Üç model/kaplama kaynağı manifest SHA-256 değerleriyle doğrulandı. Unity 6000.3.10f1 bu ortamda kurulu olmadığından derleme ve Play Mode kontrolü burada yapılamadı.
+
+## Eksik script bağlantısını onarma
+
+`SevenDwarfs` üzerinde `Missing (Mono Script)` görünüyorsa `Tools > Dwarfs > Repair Missing Chase Scripts` kullanılır. Aynı kontrol sahne açılırken ve Play Mode öncesinde otomatik yapılır. Onarım yalnızca yedi isimli cüceyi, Rigidbody ve CapsuleCollider bileşenlerini içeren SevenDwarfs kökünde çalışır. Eksik takip bileşenleri yeniden eklenir; oyuncu, Ground ve takip sırası bağlanır. Sağlıklı takip bileşenleri korunur. Değişen sahne dirty işaretlenir; Ctrl+S ile kaydedilir. Unity Play Mode doğrulaması bu ortamda yapılamadı.
