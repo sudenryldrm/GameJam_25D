@@ -20,6 +20,7 @@ public class KissProjectile : MonoBehaviour
 
     public static void Spawn(Vector3 start, Vector3 destination, Material material, Transform target = null)
     {
+        StorySfx.Play("Kiss", .52f, false);
         GameObject projectile = new GameObject("Kiss_Heart_Placeholder");
         projectile.transform.position = start;
         SphereCollider collider = projectile.AddComponent<SphereCollider>();

@@ -94,11 +94,11 @@ public class TowerLevelController : MonoBehaviour
         {
             reading = !reading;
             player.isInteracting = reading;
-            if (reading) { journal.Open(); PauseTime(); } else RestoreTime();
+            if (reading) { journal.Open(); PauseTime(); } else { journal.Close(); RestoreTime(); }
         }
         if (reading && (!NearShoes || (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)))
         {
-            reading = false;
+            reading = false; journal.Close();
             player.isInteracting = false;
             RestoreTime();
         }
@@ -125,7 +125,7 @@ public class TowerLevelController : MonoBehaviour
     private void OnPlayerRespawned()
     {
         restartCount++;
-        reading = false;
+        reading = false; journal.Close();
         player.isInteracting = false;
         RestoreTime();
         protectedUntil = Time.time + protectionDuration;
@@ -179,7 +179,7 @@ public class TowerLevelController : MonoBehaviour
 
     private void CloseJournal()
     {
-        reading = false;
+        reading = false; journal.Close();
         if (player != null) player.isInteracting = false;
         RestoreTime();
     }

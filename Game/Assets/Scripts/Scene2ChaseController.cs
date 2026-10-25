@@ -53,11 +53,11 @@ public class Scene2ChaseController : MonoBehaviour
         {
             reading = !reading;
             player.isInteracting = reading;
-            if (reading) { journal.Open(); PauseTime(); } else RestoreTime();
+            if (reading) { journal.Open(); PauseTime(); } else { journal.Close(); RestoreTime(); }
         }
         if (reading && (!NearFrog || (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)))
         {
-            reading = false;
+            reading = false; journal.Close();
             player.isInteracting = false;
             RestoreTime();
         }
@@ -66,7 +66,7 @@ public class Scene2ChaseController : MonoBehaviour
     public void HitPlayer(PlayerController25D victim, string cause = "Zehirlendin!")
     {
         if (victim != player || reading || completed || LevelIntroCutscene.IsPlaying || Time.time < protectedUntil) return;
-        notice = cause + " Başlangıca döndün.";
+        notice = cause + " BaÅŸlangÄ±ca dÃ¶ndÃ¼n.";
         noticeUntil = Time.unscaledTime + 2.5f;
         player.Respawn();
     }
@@ -74,7 +74,7 @@ public class Scene2ChaseController : MonoBehaviour
     private void OnPlayerRespawned()
     {
         restartCount++;
-        reading = false;
+        reading = false; journal.Close();
         RestoreTime();
         protectedUntil = Time.time + respawnProtection;
         ClearHazards();
@@ -90,7 +90,8 @@ public class Scene2ChaseController : MonoBehaviour
             return;
         }
         completed = true;
-        reading = false;
+        StorySfx.Play("Complete", .35f);
+        reading = false; journal.Close();
         player.isInteracting = true;
         ClearHazards();
         if (witch != null) witch.StopChase();
@@ -146,7 +147,7 @@ public class Scene2ChaseController : MonoBehaviour
 
     private void CloseJournal()
     {
-        reading = false;
+        reading = false; journal.Close();
         if (player != null) player.isInteracting = false;
         RestoreTime();
     }
@@ -157,13 +158,13 @@ public class Scene2ChaseController : MonoBehaviour
         if (reading) { journal.Draw(CloseJournal); return; }
         if (player == null || LevelIntroCutscene.IsPlaying) return;
         Matrix4x4 previous = StorybookUI.Begin();
-        StorybookUI.Chapter("II", "Cadının Ormanı");
-        StorybookUI.Stats($"Yeniden doğuş: {restartCount}");
+        StorybookUI.Chapter("II", "CadÄ±nÄ±n OrmanÄ±");
+        StorybookUI.Stats($"Yeniden doÄŸuÅŸ: {restartCount}");
         StorybookUI.Controls();
         if (Time.unscaledTime < noticeUntil) StorybookUI.Notice(notice);
-        else if (Time.time < protectedUntil && !completed) StorybookUI.Notice("Kısa süreli korunma aktif. Yola devam et!");
-        if (completed) StorybookUI.Dialog("Orman geride kalıyor…", "Kulenin kapısı açılıyor. Hikâyenin bir sonraki sayfası seni bekliyor.");
-        else if (NearFrog) StorybookUI.Prompt("Kurbağanın Ardında Kalan Hikâye");
+        else if (Time.time < protectedUntil && !completed) StorybookUI.Notice("KÄ±sa sÃ¼reli korunma aktif. Yola devam et!");
+        if (completed) StorybookUI.Dialog("Orman geride kalÄ±yorâ€¦", "Kulenin kapÄ±sÄ± aÃ§Ä±lÄ±yor. HikÃ¢yenin bir sonraki sayfasÄ± seni bekliyor.");
+        else if (NearFrog) StorybookUI.Prompt("KurbaÄŸanÄ±n ArdÄ±nda Kalan HikÃ¢ye");
         if (transitionFade > 0f)
         {
             Color color = GUI.color;

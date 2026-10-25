@@ -10,6 +10,7 @@ public class DwarfPursuer : MonoBehaviour
     private float progress;
     private DwarfModelVisual visual;
     private float targetGroundY;
+    private float voiceTimer = 4;
 
     private void Awake() { EnsureReferences(); }
     private void OnEnable() { EnsureReferences(); }
@@ -53,6 +54,7 @@ public class DwarfPursuer : MonoBehaviour
             if (visual != null) visual.SetMoving(false);
             return;
         }
+        if (order == 0) { voiceTimer -= Time.fixedDeltaTime; if (voiceTimer <= 0) { StorySfx.Reaction("Dwarf"); voiceTimer = Random.Range(6f, 10f); } }
         progress = Mathf.MoveTowards(progress, chase.DesiredDistance(order), speed * Time.fixedDeltaTime);
         Vector3 grounded = chase.GroundPoint(chase.Evaluate(progress));
         targetGroundY = grounded.y;

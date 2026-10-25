@@ -26,6 +26,7 @@ public class WitchBossAI : MonoBehaviour
     private Rigidbody targetBody;
 
     private float throwTimer;
+    private float voiceTimer = 7;
     private bool stopped;
 
     private void Start()
@@ -59,6 +60,8 @@ public class WitchBossAI : MonoBehaviour
         if (target == null || stopped || Time.timeScale == 0f) return;
         if (player != null && player.isInteracting) return;
 
+        voiceTimer -= Time.deltaTime;
+        if (voiceTimer <= 0) { if (Vector3.Distance(transform.position, target.position) < 18) StorySfx.Reaction("Witch"); voiceTimer = Random.Range(11f, 17f); }
         float gap = target.position.x - transform.position.x;
         float preferredGap = Mathf.Abs(followOffset.x);
         float speed = Mathf.Clamp(baseSpeed + Mathf.Max(0f, gap - preferredGap) * 1.5f,
@@ -81,6 +84,7 @@ public class WitchBossAI : MonoBehaviour
 
     private void ThrowPoisonApple()
     {
+        StorySfx.Play("Throw", .25f, false, .92f);
         Vector3 origin = throwPoint != null ? throwPoint.position : transform.position + Vector3.right;
         origin.z = target.position.z;
         GameObject apple = Instantiate(applePrefab, origin, Quaternion.identity);

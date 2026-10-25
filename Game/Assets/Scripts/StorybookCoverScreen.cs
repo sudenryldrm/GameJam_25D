@@ -34,6 +34,8 @@ public sealed class StorybookCoverScreen : MonoBehaviour
         if (player) player.isInteracting = true;
         Time.timeScale = 0;
         visible = true; IsShowing = true;
+        StorySfx.Play("BookOpen", .7f);
+        if (ending) StorySfx.Play("Complete", .34f);
         if (!glow) CreateGlow();
     }
 
@@ -56,11 +58,11 @@ public sealed class StorybookCoverScreen : MonoBehaviour
         // Keep the opening visible even when first-use asset loading stalls a frame.
         screenAge += Mathf.Min(Time.unscaledDeltaTime, .1f);
         float age = screenAge;
-        if (ending && age >= EndingHold && closeAt < 0) closeAt = age;
+        if (ending && age >= EndingHold && closeAt < 0) { closeAt = age; StorySfx.Play("BookClose", .7f); }
         if (!ending && closeAt < 0 && age > OpenDuration + .25f && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             Vector2 mouse = Mouse.current.position.ReadValue(); mouse.y = Screen.height - mouse.y;
-            if (OverPortrait(mouse, BookRect())) closeAt = age;
+            if (OverPortrait(mouse, BookRect())) { closeAt = age; StorySfx.Play("Click", .32f); StorySfx.Play("BookClose", .65f); }
         }
         if (closeAt < 0 || age - closeAt < CloseDuration + (ending ? .8f : 0)) return;
         if (ending)

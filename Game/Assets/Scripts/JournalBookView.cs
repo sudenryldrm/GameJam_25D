@@ -9,6 +9,7 @@ public sealed class JournalBookView
     private readonly string resource;
     private Texture2D image;
     private float openedAt;
+    private bool isOpen;
     private GUIStyle hintStyle;
 
     public JournalBookView(string resourceName) { resource = "Journals/" + resourceName; }
@@ -17,8 +18,11 @@ public sealed class JournalBookView
     {
         if (!image) image = Resources.Load<Texture2D>(resource);
         openedAt = Time.unscaledTime;
+        isOpen = true; StorySfx.Play("BookOpen", .65f);
         if (!image) Debug.LogError("Journal artwork missing: " + resource);
     }
+
+    public void Close() { if (!isOpen) return; isOpen = false; StorySfx.Play("BookClose", .6f); }
 
     public static bool Clicked(Transform target)
     {

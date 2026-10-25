@@ -51,6 +51,7 @@ public class PlayerController25D : MonoBehaviour
     private float coyoteCounter;
     private float jumpBufferCounter;
     private float currentVelocityX;
+    private float stepDistance, movementAudioAfter;
 
     private PlayableGraph playableGraph;
     private AnimationMixerPlayable mixer;
@@ -269,6 +270,9 @@ public class PlayerController25D : MonoBehaviour
 
     private void ExecuteJump(float force)
     {
+        StorySfx.Play(isGrounded || coyoteCounter > 0 ? "Jump" : "DoubleJump", .32f, false, Random.Range(.96f, 1.06f));
+        stepDistance = 0;
+        StorySfx.PrincessEffort();
         Vector3 vel = rb.linearVelocity;
         vel.y = force;
         rb.linearVelocity = vel;
@@ -278,6 +282,8 @@ public class PlayerController25D : MonoBehaviour
 
     private void FixedUpdate()
     {
+        bool wasGrounded = isGrounded;
+        float fallSpeed = rb.linearVelocity.y;
         // Zemin kontrolü
         Vector3 rayStart = transform.position + col.center;
         float rayLength = (col.height / 2f) + 0.25f;
@@ -286,6 +292,16 @@ public class PlayerController25D : MonoBehaviour
             && (rb.linearVelocity.y <= 0.1f || (rb.linearVelocity.y < jumpForce * 0.5f
                 && groundHit.collider.GetComponent<StairRamp>() != null));
 
+        if (!isInteracting && Time.time > movementAudioAfter)
+        {
+            if (isGrounded && !wasGrounded && fallSpeed < -3f) StorySfx.Play("Land", Mathf.Clamp(-fallSpeed * .018f, .18f, .42f), false);
+            if (isGrounded && Mathf.Abs(rb.linearVelocity.x) > .5f)
+            {
+                stepDistance += Mathf.Abs(rb.linearVelocity.x) * Time.fixedDeltaTime;
+                if (stepDistance > (isRunning ? 1.9f : 1.6f)) { stepDistance = 0; string surface = groundHit.collider.name.ToLowerInvariant(); StorySfx.Step(gameObject.scene.name == "Scene3_TowerEscape", surface.Contains("wood") || surface.Contains("bridge")); }
+            }
+            else stepDistance = 0;
+        }
         // Hız seçimi
         float targetSpeed = isRunning ? runSpeed : walkSpeed;
         float targetVelocityX = horizontalInput * targetSpeed;
@@ -317,11 +333,13 @@ public class PlayerController25D : MonoBehaviour
 
     public void SetCheckpoint(Vector3 position)
     {
+        if ((spawnPosition - position).sqrMagnitude > .1f) StorySfx.Play("Checkpoint", .38f);
         spawnPosition = position;
     }
 
     public void Respawn()
     {
+        StorySfx.Play("Hurt", .38f); StorySfx.PrincessEffort(true); movementAudioAfter = Time.time + .4f; stepDistance = 0;
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         rb.position = spawnPosition;

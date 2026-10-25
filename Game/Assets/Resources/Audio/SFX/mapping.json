@@ -1,0 +1,90 @@
+{
+  "BookOpen": [
+    "rpg",
+    "bookOpen"
+  ],
+  "BookClose": [
+    "rpg",
+    "bookClose"
+  ],
+  "Page0": [
+    "rpg",
+    "bookFlip1"
+  ],
+  "Page1": [
+    "rpg",
+    "bookFlip2"
+  ],
+  "Click": [
+    "interface",
+    "click_003"
+  ],
+  "Confirm": [
+    "interface",
+    "confirmation_002"
+  ],
+  "Checkpoint": [
+    "interface",
+    "confirmation_001"
+  ],
+  "Complete": [
+    "interface",
+    "confirmation_004"
+  ],
+  "Jump": [
+    "rpg",
+    "cloth1"
+  ],
+  "DoubleJump": [
+    "rpg",
+    "cloth2"
+  ],
+  "Throw": [
+    "rpg",
+    "knifeSlice"
+  ],
+  "Land": [
+    "impact",
+    "impactSoft_medium_000"
+  ],
+  "Hurt": [
+    "impact",
+    "impactPunch_medium_001"
+  ],
+  "StepGrass0": [
+    "impact",
+    "footstep_grass_000"
+  ],
+  "StepGrass1": [
+    "impact",
+    "footstep_grass_001"
+  ],
+  "StepGrass2": [
+    "impact",
+    "footstep_grass_002"
+  ],
+  "StepStone0": [
+    "impact",
+    "footstep_concrete_000"
+  ],
+  "StepStone1": [
+    "impact",
+    "footstep_concrete_001"
+  ],
+  "StepStone2": [
+    "impact",
+    "footstep_concrete_002"
+  ],
+  "StepWood0": [
+    "impact",
+    "footstep_wood_000"
+  ],
+  "StepWood1": [
+    "impact",
+    "footstep_wood_001"
+  ],
+  "StepWood2": [
+    "impact",
+    "footstep_wood_002"
+  ]
+}

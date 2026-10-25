@@ -39,7 +39,7 @@ public class FirstLevelMaskUI : MonoBehaviour
     private void Close()
     {
         if (!reading) return;
-        reading = false;
+        reading = false; journal.Close();
         Time.timeScale = previousTimeScale;
         if (player != null) player.isInteracting = false;
     }

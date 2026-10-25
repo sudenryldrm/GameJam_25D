@@ -21,6 +21,7 @@ public sealed class LevelIntroCutscene : MonoBehaviour
     private bool previousIgnoreTime, previousInteraction, running, dialogue, exiting, revealAll;
     private float previousTimeScale, beganAt, lineBeganAt, exitBeganAt, exitZoom;
     private int line, lastAdvanceFrame = -1;
+    private int reactionLine = -1;
     private string[] lines;
     private string bossName;
     private Vector3 bossPosition, stagedBossPosition;
@@ -92,9 +93,10 @@ public sealed class LevelIntroCutscene : MonoBehaviour
     {
         if (!running) return;
         dialogueStarted = true;
+        if (gameObject.scene.name == "SampleScene") FirstLevelMusic.Conversation();
         if (cameraFollow) cameraFollow.BeginConversationShot((player.transform.position + stagedBossPosition) * .5f);
         beganAt = Time.unscaledTime; lineBeganAt = beganAt + .75f;
-        line = 0; exiting = false; revealAll = false;
+        line = 0; reactionLine = -1; exiting = false; revealAll = false;
     }
 
     private void LateUpdate()
@@ -175,7 +177,8 @@ public sealed class LevelIntroCutscene : MonoBehaviour
         }
         float blend = Mathf.SmoothStep(0, 1, Mathf.Clamp01((Time.unscaledTime - beganAt) / .75f));
         if (cameraFollow) cameraFollow.BlendConversationShot(blend);
-        if (escape) { BeginExit(); return; }
+        if (escape) { StorySfx.Play("Page0", .25f); BeginExit(); return; }
+        if (Time.unscaledTime >= lineBeganAt && reactionLine != line) { reactionLine = line; if (line == 1 || line == 5) StorySfx.Reaction("Princess", true); else if (line % 2 == 0 && (line == 0 || line == 4 || line == 6)) StorySfx.Reaction(bossName == "Cadı" ? "Witch" : bossName == "Prens" ? "Knight" : "Dwarf", true); }
         if (advance && Time.unscaledTime >= lineBeganAt) Advance();
     }
 
@@ -186,7 +189,8 @@ public sealed class LevelIntroCutscene : MonoBehaviour
     {
         if (exiting || lastAdvanceFrame == Time.frameCount || Time.unscaledTime < lineBeganAt) return;
         lastAdvanceFrame = Time.frameCount;
-        if (VisibleCharacters < lines[line].Length) { revealAll = true; return; }
+        if (VisibleCharacters < lines[line].Length) { revealAll = true; StorySfx.Play("Click", .18f); return; }
+        StorySfx.Play("Page" + (line % 2), .25f);
         if (++line >= lines.Length) { line = lines.Length - 1; BeginExit(); return; }
         lineBeganAt = Time.unscaledTime; revealAll = false;
     }
@@ -194,6 +198,7 @@ public sealed class LevelIntroCutscene : MonoBehaviour
     private void BeginExit()
     {
         if (exiting) return;
+        StorySfx.StopReactions();
         exiting = true; exitBeganAt = Time.unscaledTime;
         exitZoom = Mathf.SmoothStep(0, 1, Mathf.Clamp01((Time.unscaledTime - beganAt) / .75f));
     }
@@ -221,6 +226,7 @@ public sealed class LevelIntroCutscene : MonoBehaviour
         else if (director) { director.stopped -= OnStopped; director.Stop(); }
         Time.timeScale = previousTimeScale;
         if (player) player.isInteracting = previousInteraction;
+        if (gameObject.scene.name == "SampleScene" && isActiveAndEnabled) FirstLevelMusic.Chase();
     }
 
     private void OnDisable() { Finish(); }

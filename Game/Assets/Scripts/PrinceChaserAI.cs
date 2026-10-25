@@ -71,6 +71,8 @@ public class PrinceChaserAI : MonoBehaviour
         Vector3 toPlayer = target.position - transform.position;
         Vector3 origin = transform.position + Vector3.up * 0.35f +
             Vector3.right * (Mathf.Abs(toPlayer.x) > 0.1f ? Mathf.Sign(toPlayer.x) : facing) * 0.75f;
+
+        StorySfx.Reaction("Knight");
         KissProjectile.Spawn(origin, target.position, kissMaterial, target);
         attackTimer = Random.Range(minimumKissInterval, Mathf.Max(minimumKissInterval, maximumKissInterval));
     }
