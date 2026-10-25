@@ -13,6 +13,9 @@ public sealed class LevelIntroCutscene : MonoBehaviour
     private PlayerController25D player;
     private Transform boss;
     private Rigidbody bossBody;
+    private ConversationActorPose playerPose, bossPose;
+    private MapOpeningFlythrough opening;
+    private bool dialogueStarted;
     private CameraFollow25D cameraFollow;
     private CinemachineBrain brain;
     private bool previousIgnoreTime, previousInteraction, running, dialogue, exiting, revealAll;
@@ -50,17 +53,49 @@ public sealed class LevelIntroCutscene : MonoBehaviour
         }
         bossBody = boss.GetComponent<Rigidbody>();
         bossPosition = boss.position; bossRotation = boss.rotation; playerRotation = player.transform.rotation;
+        playerPose = new ConversationActorPose(player.transform);
+        bossPose = new ConversationActorPose(boss);
+        Physics.SyncTransforms();
+        playerPose.Ground();
         Vector3 start = player.transform.position;
-        stagedBossPosition = new Vector3(start.x - 2.8f, bossName == "Cadı" ? start.y + .55f : bossPosition.y, start.z);
-        SetBoss(stagedBossPosition, Quaternion.Euler(0, 90, 0));
-        player.transform.rotation = Quaternion.Euler(0, -90, 0);
+        float bossX = gameObject.scene.name == "Scene3_TowerEscape" ? Mathf.Max(-10.4f, start.x - 2f) : start.x - 2.8f;
+        SetBoss(new Vector3(bossX, start.y, start.z), bossRotation);
+        Physics.SyncTransforms();
+        bossPose.Ground(bossName == "Cadı" ? .15f : 0);
+        stagedBossPosition = boss.position;
+        playerPose.Face(boss.position); bossPose.Face(player.transform.position);
         cameraFollow = FindFirstObjectByType<CameraFollow25D>();
-        if (cameraFollow) cameraFollow.BeginConversationShot((player.transform.position + stagedBossPosition) * .5f);
+        if (cameraFollow) cameraFollow.BeginCameraSequence();
         Camera camera = Camera.main;
         brain = camera ? camera.GetComponent<CinemachineBrain>() : null;
         if (brain) { previousIgnoreTime = brain.IgnoreTimeScale; brain.IgnoreTimeScale = true; }
+        dialogueStarted = false;
+        opening = GetComponent<MapOpeningFlythrough>() ?? gameObject.AddComponent<MapOpeningFlythrough>();
+        if (!opening.TryPlay(cameraFollow, BeginDialogueZoom)) BeginDialogueZoom();
+    }
+
+    // Future Start buttons can call this without needing a separate opening implementation.
+    public void StartGameOpening()
+    {
+        if (running) return;
+        MapOpeningFlythrough.ResetForNewGame();
+        PlayIntro();
+    }
+
+    private void BeginDialogueZoom()
+    {
+        if (!running) return;
+        dialogueStarted = true;
+        if (cameraFollow) cameraFollow.BeginConversationShot((player.transform.position + stagedBossPosition) * .5f);
         beganAt = Time.unscaledTime; lineBeganAt = beganAt + .75f;
         line = 0; exiting = false; revealAll = false;
+    }
+
+    private void LateUpdate()
+    {
+        if (!running || !dialogue || exiting || !player || !boss) return;
+        playerPose.Face(boss.position);
+        bossPose.Face(player.transform.position);
     }
 
     private bool FindConversation()
@@ -118,7 +153,7 @@ public sealed class LevelIntroCutscene : MonoBehaviour
 
     private void Update()
     {
-        if (!running) return;
+        if (!running || (opening && opening.Running)) return;
         bool escape = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
         bool advance = Keyboard.current != null && (Keyboard.current.eKey.wasPressedThisFrame || Keyboard.current.spaceKey.wasPressedThisFrame);
         advance |= Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
@@ -127,8 +162,8 @@ public sealed class LevelIntroCutscene : MonoBehaviour
         {
             float t = Mathf.SmoothStep(0, 1, Mathf.Clamp01((Time.unscaledTime - exitBeganAt) / .65f));
             if (cameraFollow) cameraFollow.BlendConversationShot(exitZoom * (1 - t));
-            SetBoss(Vector3.Lerp(stagedBossPosition, bossPosition, t), Quaternion.Slerp(Quaternion.Euler(0, 90, 0), bossRotation, t));
-            player.transform.rotation = Quaternion.Slerp(Quaternion.Euler(0, -90, 0), playerRotation, t);
+            SetBoss(Vector3.Lerp(stagedBossPosition, bossPosition, t), Quaternion.Slerp(boss.rotation, bossRotation, t));
+            playerPose.Set(player.transform.position, Quaternion.Slerp(player.transform.rotation, playerRotation, t));
             if (t >= 1) Finish();
             return;
         }
@@ -168,10 +203,12 @@ public sealed class LevelIntroCutscene : MonoBehaviour
     {
         if (!running) return;
         running = false; IsPlaying = false;
+        if (opening && opening.Running) opening.Cancel();
         if (dialogue)
         {
             SetBoss(bossPosition, bossRotation);
-            if (player) player.transform.rotation = playerRotation;
+            if (player) playerPose.Set(player.transform.position, playerRotation);
+            playerPose?.Release(); bossPose?.Release();
             if (cameraFollow) cameraFollow.EndConversationShot();
             if (brain) brain.IgnoreTimeScale = previousIgnoreTime;
         }
@@ -183,8 +220,9 @@ public sealed class LevelIntroCutscene : MonoBehaviour
     private void OnDisable() { Finish(); }
     private void OnGUI()
     {
-        if (!running) return;
+        if (!running || (opening && opening.Running)) return;
         if (!dialogue) { StorybookUI.SkipPrompt(); return; }
+        if (!dialogueStarted) return;
         if (exiting || Time.unscaledTime < lineBeganAt) return;
         Matrix4x4 previous = StorybookUI.Begin();
         string text = lines[line].Substring(0, VisibleCharacters);

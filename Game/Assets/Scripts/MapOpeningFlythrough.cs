@@ -1,0 +1,197 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+
+[DefaultExecutionOrder(600)]
+public sealed class MapOpeningFlythrough : MonoBehaviour
+{
+    public static bool IsPlaying { get; private set; }
+    private static bool completedThisRun;
+    public bool Running { get; private set; }
+    private CameraFollow25D cameraFollow;
+    private Action finished;
+    private GameObject[] prefabs;
+    private GameObject preview, sunObject;
+    private Material skyMaterial, originalSky;
+    private readonly List<Light> disabledSuns = new List<Light>();
+    private float beganAt;
+    private float elapsed;
+    private int shot = -1;
+    private Color skyColor, equatorColor, groundColor, fogColor;
+    private bool fogEnabled, restored;
+    private FogMode fogMode;
+    private AmbientMode ambientMode;
+    private float fogStart, fogEnd;
+    private const float Offset = 1000;
+    private readonly List<Renderer> hiddenPlayer = new List<Renderer>();
+    private Transform player;
+    private static readonly Vector3[][] Routes = {
+        new[] { new Vector3(-44,2.15f,-4), new Vector3(-40,2.15f,-3.7f), new Vector3(-36,2.15f,-3.5f), new Vector3(-31,2.15f,-3.8f), new Vector3(-27,2.15f,-4) },
+        new[] { new Vector3(13.8f,6.4f,-1.8f), new Vector3(15.5f,5.5f,-1.8f), new Vector3(18,2.6f,-1.8f), new Vector3(21.5f,2.15f,-1.8f), new Vector3(25.5f,2.15f,-1.8f) },
+        new[] { new Vector3(-8.5f,2.15f,-.4f), new Vector3(-5,3,-.4f), new Vector3(-1.5f,3.85f,-.4f), new Vector3(2,4.68f,-.4f), new Vector3(5.5f,5.5f,-.4f) }
+    };
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    public static void ResetForNewGame() { completedThisRun = false; IsPlaying = false; }
+
+    public bool TryPlay(CameraFollow25D follow, Action onFinished)
+    {
+        if (completedThisRun || !follow || gameObject.scene.name != "SampleScene")
+        { Debug.Log("OPENING skipped: completed=" + completedThisRun + ", camera=" + (bool)follow + ", scene=" + gameObject.scene.name); return false; }
+        prefabs = new[] { Resources.Load<GameObject>("MapPreviews/Forest"),
+            Resources.Load<GameObject>("MapPreviews/WitchForest"), Resources.Load<GameObject>("MapPreviews/Tower") };
+        foreach (GameObject prefab in prefabs)
+            if (!prefab) { Debug.LogError("Opening tour previews need baking: Tools/Story/Bake Opening Map Previews"); return false; }
+        cameraFollow = follow; finished = onFinished;
+        var actor = FindFirstObjectByType<PlayerController25D>(); player = actor ? actor.transform : null;
+        originalSky = RenderSettings.skybox;
+        ambientMode = RenderSettings.ambientMode;
+        skyColor = RenderSettings.ambientSkyColor; equatorColor = RenderSettings.ambientEquatorColor;
+        groundColor = RenderSettings.ambientGroundColor;
+        fogEnabled = RenderSettings.fog; fogMode = RenderSettings.fogMode;
+        fogColor = RenderSettings.fogColor; fogStart = RenderSettings.fogStartDistance; fogEnd = RenderSettings.fogEndDistance;
+        foreach (Light light in FindObjectsByType<Light>(FindObjectsSortMode.None))
+            if (light.type == LightType.Directional && light.enabled) { disabledSuns.Add(light); light.enabled = false; }
+        Shader skyShader = Shader.Find("Skybox/Procedural");
+        if (skyShader) { skyMaterial = new Material(skyShader); skyMaterial.SetFloat("_SunSize", .025f); }
+        sunObject = new GameObject("Opening Preview Sun");
+        var sun = sunObject.AddComponent<Light>(); sun.type = LightType.Directional; sun.shadows = LightShadows.None;
+        sun.transform.rotation = Quaternion.Euler(38, -32, 0);
+        cameraFollow.BeginCameraSequence();
+        Running = true; IsPlaying = true; completedThisRun = true; restored = false;
+        beganAt = Time.unscaledTime; elapsed = 0;
+        Debug.Log("OPENING started: three scenery maps, 15 seconds of rendered flight.");
+        SetShot(0); Evaluate(0);
+        return true;
+    }
+
+    private void SetShot(int value)
+    {
+        if (value == shot) return;
+        shot = value;
+        Debug.Log("OPENING shot " + shot + " at " + elapsed.ToString("0.00") + " seconds");
+        if (preview) { preview.SetActive(false); Destroy(preview); preview = null; }
+        if (shot == 3)
+        {
+            RestoreEnvironment();
+            if (player) foreach (Renderer renderer in player.GetComponentsInChildren<Renderer>())
+                if (renderer.enabled) { hiddenPlayer.Add(renderer); renderer.enabled = false; }
+            return;
+        }
+        preview = Instantiate(prefabs[shot], new Vector3(Offset, 0, 0), Quaternion.identity);
+        MapPreviewInfo info = preview.GetComponent<MapPreviewInfo>();
+        Light sun = sunObject.GetComponent<Light>();
+        sun.color = info.sunlight; sun.intensity = info.intensity;
+        RenderSettings.ambientMode = AmbientMode.Trilight;
+        RenderSettings.ambientSkyColor = info.sky;
+        RenderSettings.ambientEquatorColor = info.ambient;
+        RenderSettings.ambientGroundColor = info.ambient * .55f;
+        RenderSettings.fog = true; RenderSettings.fogMode = FogMode.Linear;
+        RenderSettings.fogColor = info.mist; RenderSettings.fogStartDistance = 45; RenderSettings.fogEndDistance = 150;
+        if (skyMaterial)
+        {
+            skyMaterial.SetColor("_SkyTint", info.sky);
+            skyMaterial.SetColor("_GroundColor", info.mist);
+            RenderSettings.skybox = skyMaterial;
+        }
+    }
+
+    private void Update()
+    {
+        if (!Running) return;
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) { Complete(); return; }
+        // Do not consume the movie while a first-use shader or preview is blocking a frame.
+        elapsed += Mathf.Min(Time.unscaledDeltaTime, .05f);
+        float time = elapsed;
+        if (time >= 15) { Complete(); return; }
+        Evaluate(time);
+    }
+
+    private void Evaluate(float time)
+    {
+        int next = Mathf.Min(3, (int)(time / 4));
+        SetShot(next);
+        float t = Mathf.SmoothStep(0, 1, next < 3 ? (time - next * 4) / 4 : (time - 12) / 3);
+        Vector3 position, look;
+        if (next < 3)
+        {
+            position = Sample(Routes[next], t) + Vector3.right * Offset;
+            position.y += Mathf.Sin(t * Mathf.PI * 4) * .025f;
+            Vector3 direction = next == 2 ? new Vector3(4, .8f, 3.8f) : new Vector3(7, -.12f, next == 0 ? 1.8f : 2.6f);
+            look = position + direction;
+            cameraFollow.SetCinematicPose(position, Quaternion.LookRotation(look - position), 10, true, 74);
+        }
+        else
+        {
+            Vector3 home = cameraFollow.CinematicHome;
+            Vector3 eye = player ? player.position + Vector3.up * .65f : home + Vector3.forward * 16;
+            position = Vector3.Lerp(eye, home, t);
+            Quaternion rotation = Quaternion.Slerp(Quaternion.LookRotation(new Vector3(7,0,1.8f)), cameraFollow.CinematicHomeRotation, t);
+            float depth = Mathf.Abs(Vector3.Dot(eye-home, cameraFollow.CinematicHomeRotation * Vector3.forward));
+            float endFov = 2 * Mathf.Atan(cameraFollow.CinematicHomeSize / Mathf.Max(1, depth)) * Mathf.Rad2Deg;
+            cameraFollow.SetCinematicPose(position, rotation, cameraFollow.CinematicHomeSize, true, Mathf.Lerp(74, endFov, t));
+            if (t > .4f) RestorePlayer();
+        }
+    }
+
+    private static Vector3 Sample(Vector3[] points, float time)
+    {
+        float position = Mathf.Clamp01(time) * (points.Length-1);
+        int i = Mathf.Min(points.Length-2, Mathf.FloorToInt(position));
+        float t = position-i;
+        Vector3 a=points[Mathf.Max(0,i-1)], b=points[i], c=points[i+1], d=points[Mathf.Min(points.Length-1,i+2)];
+        return .5f*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
+    }
+
+    private void RestorePlayer()
+    { foreach (Renderer renderer in hiddenPlayer) if (renderer) renderer.enabled=true; hiddenPlayer.Clear(); }
+
+    private void RestoreEnvironment()
+    {
+        if (restored) return;
+        restored = true;
+        if (sunObject) sunObject.SetActive(false);
+        foreach (Light light in disabledSuns) if (light) light.enabled = true;
+        RenderSettings.skybox = originalSky; RenderSettings.ambientMode = ambientMode;
+        RenderSettings.ambientSkyColor = skyColor; RenderSettings.ambientEquatorColor = equatorColor;
+        RenderSettings.ambientGroundColor = groundColor;
+        RenderSettings.fog = fogEnabled; RenderSettings.fogMode = fogMode; RenderSettings.fogColor = fogColor;
+        RenderSettings.fogStartDistance = fogStart; RenderSettings.fogEndDistance = fogEnd;
+    }
+
+    private void Complete()
+    {
+        if (!Running) return;
+        Running = false; IsPlaying = false;
+        Debug.Log("OPENING completed at " + elapsed.ToString("0.00") + " seconds");
+        RestoreEnvironment();
+        RestorePlayer();
+        if (preview) { preview.SetActive(false); Destroy(preview); }
+        if (sunObject) Destroy(sunObject);
+        if (skyMaterial) Destroy(skyMaterial);
+        if (cameraFollow) cameraFollow.SetCinematicPose(cameraFollow.CinematicHome, cameraFollow.CinematicHomeRotation, cameraFollow.CinematicHomeSize);
+        Action callback = finished; finished = null; callback?.Invoke();
+    }
+
+    private void OnDisable() { finished = null; Complete(); }
+    public void Cancel() { finished = null; Complete(); }
+
+    private void OnGUI()
+    {
+        if (!Running) return;
+        Matrix4x4 matrix = GUI.matrix; Color color = GUI.color; int depth = GUI.depth;
+        GUI.matrix = Matrix4x4.identity; GUI.depth = -1500;
+        GUI.color = Color.black;
+        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height * .065f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(0, Screen.height * .935f, Screen.width, Screen.height * .065f), Texture2D.whiteTexture);
+        float time = elapsed;
+        float local = time - shot * 4;
+        float fade = Mathf.Clamp01(1 - local / .22f);
+        if (shot < 3) fade = Mathf.Max(fade, Mathf.Clamp01((local - 3.78f) / .22f));
+        GUI.color = new Color(0, 0, 0, fade);
+        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.matrix = matrix; GUI.color = color; GUI.depth = depth;
+    }
+}

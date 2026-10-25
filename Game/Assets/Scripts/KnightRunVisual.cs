@@ -9,6 +9,7 @@ public sealed class KnightRunVisual : MonoBehaviour
     private PlayableGraph graph;
     private AnimationClipPlayable run;
     private Transform hips;
+    private Transform leftFoot, rightFoot;
     private Vector3 restHips, restPosition, previousPosition;
     private Quaternion restRotation;
     private float time, duration;
@@ -57,6 +58,7 @@ public sealed class KnightRunVisual : MonoBehaviour
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         foreach (Transform bone in GetComponentsInChildren<Transform>())
             if (bone.name == "Hips" || bone.name.EndsWith(":Hips")) { hips = bone; restHips = bone.localPosition; break; }
+        foreach (Transform bone in GetComponentsInChildren<Transform>()) { if (bone.name.EndsWith("LeftFoot")) leftFoot = bone; if (bone.name.EndsWith("RightFoot")) rightFoot = bone; }
         restPosition = transform.localPosition;
         restRotation = transform.localRotation;
         previousPosition = transform.parent.position;
@@ -80,6 +82,7 @@ public sealed class KnightRunVisual : MonoBehaviour
         transform.localPosition = restPosition;
         transform.localRotation = restRotation;
         if (hips) hips.localPosition = new Vector3(restHips.x, hips.localPosition.y, restHips.z);
+        if (LevelIntroCutscene.IsPlaying && leftFoot && rightFoot) { var capsule = GetComponentInParent<CapsuleCollider>(); if (capsule) transform.position += Vector3.up * (capsule.bounds.min.y + .06f - Mathf.Min(leftFoot.position.y, rightFoot.position.y)); }
     }
 
     private void OnDisable() { if (graph.IsValid()) graph.Destroy(); }

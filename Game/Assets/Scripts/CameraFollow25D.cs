@@ -30,8 +30,17 @@ public class CameraFollow25D : MonoBehaviour
     private Quaternion conversationRotation;
     private float conversationViewSize;
     private float conversationCloseSize;
+    private Vector3 cinematicHome;
+    private Quaternion cinematicHomeRotation;
+    private float cinematicHomeSize;
+    private float cinematicNear, cinematicFar, cinematicFov;
+    private CinemachineBrain cinematicBrain;
+    private bool brainWasEnabled;
+    public Vector3 CinematicHome => cinematicHome;
+    public Quaternion CinematicHomeRotation => cinematicHomeRotation;
+    public float CinematicHomeSize => cinematicHomeSize;
 
-    private Transform FollowTransform => gameplayCamera != null ? gameplayCamera.transform : transform;
+    private Transform FollowTransform => conversationActive ? transform : gameplayCamera != null ? gameplayCamera.transform : transform;
     private float CurrentViewSize => gameplayCamera != null ? gameplayCamera.Lens.OrthographicSize : view.orthographicSize;
 
     private void Start()
@@ -149,29 +158,53 @@ public class CameraFollow25D : MonoBehaviour
 
     public void BeginConversationShot(Vector3 center)
     {
-        conversationActive = true;
-        conversationFrom = FollowTransform.position;
-        conversationRotation = FollowTransform.rotation;
-        conversationViewSize = CurrentViewSize;
+        BeginCameraSequence();
+        conversationFrom = transform.position;
+        conversationRotation = transform.rotation;
+        conversationViewSize = view.orthographicSize;
         conversationTo = new Vector3(center.x, center.y - .35f, offset.z);
         conversationCloseSize = Mathf.Max(2.8f, 3.2f / Mathf.Max(.1f, view.aspect));
+    }
+
+    public void BeginCameraSequence()
+    {
+        if (conversationActive) return;
+        SnapToTarget();
+        cinematicHome = FollowTransform.position;
+        cinematicHomeRotation = FollowTransform.rotation;
+        cinematicHomeSize = CurrentViewSize;
+        cinematicNear = view.nearClipPlane; cinematicFar = view.farClipPlane; cinematicFov = view.fieldOfView;
+        cinematicBrain = GetComponent<CinemachineBrain>();
+        if (cinematicBrain) { brainWasEnabled = cinematicBrain.enabled; cinematicBrain.enabled = false; }
+        conversationActive = true;
+        SetCinematicPose(cinematicHome, cinematicHomeRotation, cinematicHomeSize);
+    }
+
+    public void SetCinematicPose(Vector3 position, Quaternion rotation, float size, bool perspective = false, float fieldOfView = 45)
+    {
+        if (!conversationActive) BeginCameraSequence();
+        transform.SetPositionAndRotation(position, rotation);
+        view.orthographic = !perspective;
+        view.orthographicSize = size;
+        view.fieldOfView = fieldOfView;
+        view.nearClipPlane = .1f; view.farClipPlane = 250;
     }
 
     public void BlendConversationShot(float amount)
     {
         if (!conversationActive) return;
-        FollowTransform.SetPositionAndRotation(Vector3.Lerp(conversationFrom, conversationTo, amount),
-            Quaternion.Slerp(conversationRotation, Quaternion.identity, amount));
         float size = Mathf.Lerp(conversationViewSize, conversationCloseSize, amount);
-        if (gameplayCamera != null)
-        { LensSettings lens = gameplayCamera.Lens; lens.OrthographicSize = size; gameplayCamera.Lens = lens; }
-        else view.orthographicSize = size;
+        SetCinematicPose(Vector3.Lerp(conversationFrom, conversationTo, amount),
+            Quaternion.Slerp(conversationRotation, Quaternion.identity, amount), size);
     }
 
     public void EndConversationShot()
     {
-        BlendConversationShot(0);
+        if (!conversationActive) return;
+        SetCinematicPose(cinematicHome, cinematicHomeRotation, cinematicHomeSize);
         conversationActive = false;
+        view.nearClipPlane = cinematicNear; view.farClipPlane = cinematicFar; view.fieldOfView = cinematicFov;
+        if (cinematicBrain) cinematicBrain.enabled = brainWasEnabled;
         followVelocity = Vector3.zero;
     }
 

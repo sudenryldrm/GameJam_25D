@@ -40,6 +40,7 @@ public sealed class ForestAtmosphere : MonoBehaviour
 
     private void Update()
     {
+        if (MapOpeningFlythrough.IsPlaying) return;
         if (Time.realtimeSinceStartup < nextUpdate) return;
         nextUpdate = Time.realtimeSinceStartup + .2f;
         ApplyMood();
@@ -47,6 +48,7 @@ public sealed class ForestAtmosphere : MonoBehaviour
 
     private void ApplyMood()
     {
+        if (MapOpeningFlythrough.IsPlaying) return;
         if (SceneManager.GetActiveScene() != gameObject.scene) return;
         float progress = Application.IsPlaying(gameObject) && player
             ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(routeStart, routeEnd, player.position.x)) : .35f;

@@ -10,7 +10,6 @@ public class PrinceChaserAI : MonoBehaviour
     [SerializeField] private Material kissMaterial;
     [SerializeField] private float baseSpeed = 5.1f;
     [SerializeField] private float maximumSpeed = 9.5f;
-    [SerializeField] private float startDelay = 3.5f;
     [SerializeField] private float minimumKissInterval = 2f;
     [SerializeField] private float maximumKissInterval = 3f;
     [SerializeField] private float jumpLift = 1.7f;
@@ -18,7 +17,6 @@ public class PrinceChaserAI : MonoBehaviour
     private Rigidbody rb;
     private float[] cumulative;
     private float progress;
-    private float delay;
     private float attackTimer;
     private float facing = 1f;
     private bool stopped;
@@ -43,7 +41,6 @@ public class PrinceChaserAI : MonoBehaviour
         int index = Mathf.Clamp(checkpointIndex, 0, route.Length - 1);
         progress = cumulative[Mathf.Max(0, index - 1)];
         rb.position = PositionAt(progress) + Vector3.up * 0.9f;
-        delay = startDelay;
         attackTimer = 1f;
         stopped = false;
     }
@@ -55,7 +52,7 @@ public class PrinceChaserAI : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (!Playing || cumulative == null || delay > 0f) return;
+        if (!Playing || cumulative == null) return;
         float playerProgress = ProjectToRoute(target.position - Vector3.up);
         float gap = Mathf.Abs(playerProgress - progress);
         float speed = Mathf.Clamp(baseSpeed + Mathf.Max(0f, gap - 5f) * 0.5f, baseSpeed, maximumSpeed);
@@ -69,7 +66,6 @@ public class PrinceChaserAI : MonoBehaviour
     private void Update()
     {
         if (!Playing) return;
-        if (delay > 0f) { delay -= Time.deltaTime; return; }
         attackTimer -= Time.deltaTime;
         if (attackTimer > 0f) return;
         Vector3 toPlayer = target.position - transform.position;
@@ -113,7 +109,7 @@ public class PrinceChaserAI : MonoBehaviour
     private void OnTriggerStay(Collider other) { TryCatch(other); }
     private void TryCatch(Collider other)
     {
-        if (!Playing || delay > 0f) return;
+        if (!Playing) return;
         PlayerController25D player = other.GetComponentInParent<PlayerController25D>();
         if (player != null) TowerLevelController.Instance.HitPlayer(player, "Prens seni yakaladı!");
     }

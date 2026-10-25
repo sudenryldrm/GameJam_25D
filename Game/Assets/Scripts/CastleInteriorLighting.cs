@@ -15,6 +15,7 @@ public sealed class CastleInteriorLighting : MonoBehaviour
 
     public void Apply()
     {
+        if (MapOpeningFlythrough.IsPlaying) return;
         if (SceneManager.GetActiveScene() != gameObject.scene || gameObject.scene.name != "Scene3_TowerEscape") return;
         foreach (Light light in FindObjectsByType<Light>(FindObjectsSortMode.None))
             if (light.gameObject.scene == gameObject.scene && light.type == LightType.Directional)
@@ -62,6 +63,7 @@ public sealed class CastleInteriorLighting : MonoBehaviour
 
     private void Update()
     {
+        if (MapOpeningFlythrough.IsPlaying) return;
         if (Time.realtimeSinceStartup < nextCheck) return;
         nextCheck = Time.realtimeSinceStartup + .2f;
         UpdateFloor();
