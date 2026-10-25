@@ -28,7 +28,13 @@ public sealed class LevelIntroCutscene : MonoBehaviour
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics() { IsPlaying = false; }
-    private void Start() { if (playOnStart) PlayIntro(); }
+    private void Start()
+    {
+        if (!playOnStart) return;
+        if (gameObject.scene.name == "SampleScene" && StorybookCoverScreen.NeedsStart)
+            (GetComponent<StorybookCoverScreen>() ?? gameObject.AddComponent<StorybookCoverScreen>()).ShowStart(StartGameOpening);
+        else PlayIntro();
+    }
 
     public void PlayIntro()
     {

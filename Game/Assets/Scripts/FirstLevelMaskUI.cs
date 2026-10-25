@@ -19,7 +19,7 @@ public class FirstLevelMaskUI : MonoBehaviour
 
     private void Update()
     {
-        if (LevelIntroCutscene.IsPlaying) return;
+        if (LevelIntroCutscene.IsPlaying || StorybookCoverScreen.IsShowing) return;
         if (player == null) return;
         if (NearMask && ((Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) || (!reading && JournalBookView.Clicked(mask))))
         {
@@ -52,7 +52,7 @@ public class FirstLevelMaskUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (LevelIntroCutscene.IsPlaying) return;
+        if (LevelIntroCutscene.IsPlaying || StorybookCoverScreen.IsShowing) return;
         if (reading) { journal.Draw(Close); return; }
         if (player == null || LevelIntroCutscene.IsPlaying) return;
         Matrix4x4 previous = StorybookUI.Begin();

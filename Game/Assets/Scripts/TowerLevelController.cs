@@ -141,6 +141,7 @@ public class TowerLevelController : MonoBehaviour
         ClearKisses();
         if (prince != null) prince.StopChase();
         PauseTime();
+        (GetComponent<StorybookCoverScreen>() ?? gameObject.AddComponent<StorybookCoverScreen>()).ShowEnding();
     }
 
     private void ClearKisses()
