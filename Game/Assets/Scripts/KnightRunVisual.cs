@@ -15,6 +15,7 @@ public sealed class KnightRunVisual : MonoBehaviour
 
     private void OnEnable()
     {
+        ApplyMaterials();
         if (!Application.isPlaying) return;
         PlayRun();
     }
@@ -23,6 +24,22 @@ public sealed class KnightRunVisual : MonoBehaviour
     {
         runClip = clip;
         if (Application.isPlaying && isActiveAndEnabled) PlayRun();
+    }
+
+    public void ApplyMaterials()
+    {
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
+        {
+            string part = renderer.name.ToLowerInvariant();
+            string name = part.Contains("pants") ? "Knight_Cloth" :
+                part.Contains("sword") || part.Contains("polysurface10") ? "Knight_Sword" : "Knight_Armor";
+            Material material = Resources.Load<Material>("SceneArt/" + name);
+            if (!material) continue;
+            Material[] slots = renderer.sharedMaterials;
+            if (slots.Length == 0) slots = new Material[1];
+            for (int i = 0; i < slots.Length; i++) slots[i] = material;
+            renderer.sharedMaterials = slots;
+        }
     }
 
     private void PlayRun()

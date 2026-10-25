@@ -43,7 +43,7 @@ public static class TowerArtSetup
         for (int i = 0; i < bones.Length; i++)
         { bones[i].localRotation = before[i]; bones[i].localPosition = positions[i]; bones[i].localScale = scales[i]; }
         if (!changed) throw new Exception("Knight animation did not change the skeleton pose");
-        int steps = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Count(t => t.name == "Stone_Step_Visual");
+        int steps = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Count(t => t.name.StartsWith("Step_"));
         if (steps != 96) throw new Exception("Expected 96 marble steps, got " + steps);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);

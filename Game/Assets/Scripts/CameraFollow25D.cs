@@ -56,7 +56,7 @@ public class CameraFollow25D : MonoBehaviour
                     lockHorizontalPosition = false;
                     break;
                 case "Scene3_TowerEscape":
-                    viewSize = 7.6f; minimumHalfWidth = 12.8f;
+                    viewSize = 6.3f; minimumHalfWidth = 11.2f;
                     lockHorizontalPosition = true; horizontalPosition = 0f;
                     lookAhead = 0f; verticalDeadZone = 1.1f;
                     break;
@@ -79,11 +79,10 @@ public class CameraFollow25D : MonoBehaviour
             view.nearClipPlane = 0.1f;
             view.farClipPlane = 100f;
         }
-        // Face the vertical brick facade directly; deep ground tops no longer
-        // project over the stone rows. The tower retains its previous camera angle.
+        // Frame the facade straight on so the floor never exposes the empty world below.
         bool forestProfile = useSceneProfile && (gameObject.scene.name == "SampleScene" ||
             gameObject.scene.name == "Scene2_WitchChase");
-        float pitch = forestProfile ? 0f : 8f;
+        float pitch = forestProfile || IsTowerProfile ? 0f : 8f;
         FollowTransform.rotation = Quaternion.Euler(pitch, 0f, 0f);
         configured = true;
         UpdateViewSize();
@@ -112,12 +111,22 @@ public class CameraFollow25D : MonoBehaviour
             minimumX + halfWidth, maximumX - halfWidth);
     }
 
+    private bool IsTowerProfile => useSceneProfile && gameObject.scene.name == "Scene3_TowerEscape";
+
+    private float CameraY(float desired)
+    {
+        if (!IsTowerProfile) return Mathf.Max(minimumY, desired);
+        float bottom = CurrentViewSize - .35f;
+        float top = 42f - CurrentViewSize;
+        return top > bottom ? Mathf.Clamp(desired, bottom, top) : 20.825f;
+    }
+
     private void SnapToTarget()
     {
         if (!configured || target == null) return;
         followVelocity = Vector3.zero;
         facing = 1f;
-        FollowTransform.position = new Vector3(CameraX(), Mathf.Max(minimumY, target.position.y + offset.y), offset.z);
+        FollowTransform.position = new Vector3(CameraX(), CameraY(target.position.y + offset.y), offset.z);
     }
 
     private void LateUpdate()
@@ -128,7 +137,7 @@ public class CameraFollow25D : MonoBehaviour
             facing = Mathf.MoveTowards(facing, Mathf.Sign(targetBody.linearVelocity.x), Time.deltaTime * 4f);
         float dy = target.position.y + offset.y - FollowTransform.position.y;
         float y = FollowTransform.position.y + Mathf.Sign(dy) * Mathf.Max(0f, Mathf.Abs(dy) - verticalDeadZone);
-        Vector3 destination = new Vector3(CameraX(), Mathf.Max(minimumY, y), offset.z);
+        Vector3 destination = new Vector3(CameraX(), CameraY(y), offset.z);
         FollowTransform.position = Vector3.SmoothDamp(FollowTransform.position, destination, ref followVelocity,
             1f / Mathf.Max(0.1f, smoothSpeed), Mathf.Infinity, Time.deltaTime);
     }
