@@ -14,9 +14,9 @@ public sealed class DwarfModelVisual : MonoBehaviour
     private Transform anchor;
     private Renderer placeholder;
     private Renderer[] renderers;
-    private SkinnedMeshRenderer[] skins;
-    private Mesh[] snapshots;
-    private readonly List<Vector3> vertices = new List<Vector3>();
+    private Transform hips;
+    private Vector3 hipsRestPosition;
+    private bool reportedMissingAssets;
     private readonly List<Transform> feet = new List<Transform>();
     private PlayableGraph graph;
     private AnimationClipPlayable run;
@@ -28,9 +28,8 @@ public sealed class DwarfModelVisual : MonoBehaviour
     private float clipLength;
     private Vector3 fittedLocalPosition;
     private float soleOffset;
-    private float nextPoseSample;
 
-    public bool Ready => model != null && graph.IsValid();
+    public bool Ready => model != null;
 
     public void SetMoving(bool value) { moving = value; }
 
@@ -57,19 +56,20 @@ public sealed class DwarfModelVisual : MonoBehaviour
     private void LateUpdate()
     {
         if (!Ready || anchor == null) return;
-        // Recalibrate occasionally from the actual skinned soles. In between,
-        // inexpensive foot/toe bone tracking keeps the supporting foot planted.
-        if (builtForPlay && Time.time >= nextPoseSample)
+        // Generic run clips can retain horizontal hip translation even with root
+        // motion disabled. Only the chase Rigidbody should move the character.
+        model.transform.localPosition = fittedLocalPosition;
+        if (hips != null)
         {
-            if (TryPoseBounds(out Bounds pose))
-            {
-                if (feet.Count > 0) soleOffset = LowestFootBone() - pose.min.y;
-                else model.transform.position += Vector3.up * (FloorY - pose.min.y);
-            }
-            nextPoseSample = Time.time + 0.18f;
+            Vector3 pose = hips.localPosition;
+            hips.localPosition = new Vector3(hipsRestPosition.x, pose.y, hipsRestPosition.z);
         }
         if (feet.Count > 0)
-            model.transform.position += Vector3.up * (FloorY - (LowestFootBone() - soleOffset));
+        {
+            float delta = FloorY - (LowestFootBone() - soleOffset);
+            if (!float.IsNaN(delta) && !float.IsInfinity(delta))
+                model.transform.position += Vector3.up * Mathf.Clamp(delta, -visualHeight, visualHeight);
+        }
     }
 
     private float FloorY => anchor.position.y - groundInset;
@@ -92,13 +92,20 @@ public sealed class DwarfModelVisual : MonoBehaviour
         Texture2D diffuse = Resources.Load<Texture2D>("Dwarfs/GnomeDiffuse");
         Texture2D normal = Resources.Load<Texture2D>("Dwarfs/GnomeNormal");
         anchor = transform.Find("Art_Anchor");
-        if (source == null || material == null || diffuse == null || anchor == null) return;
+        if (source == null || material == null || diffuse == null || anchor == null)
+        {
+            if (!reportedMissingAssets)
+            {
+                Debug.LogWarning("Dwarf assets are not imported yet. Stop Play Mode and use Tools > Dwarfs > Repair Materials and Run Animation.", this);
+                reportedMissingAssets = true;
+            }
+            return;
+        }
+        reportedMissingAssets = false;
         AnimationClip clip = Resources.Load<AnimationClip>("Dwarfs/GnomeRunAnimation");
         if (clip == null)
             foreach (AnimationClip candidate in Resources.LoadAll<AnimationClip>("Dwarfs/GnomeRun"))
                 if (!candidate.name.StartsWith("__preview__")) { clip = candidate; break; }
-        if (clip == null || clip.length <= 0f)
-        { Debug.LogError("Dwarf run clip is missing or empty.", this); return; }
 
         builtForPlay = Application.IsPlaying(gameObject);
         runtimeMaterial = new Material(material) { hideFlags = HideFlags.DontSave };
@@ -116,10 +123,11 @@ public sealed class DwarfModelVisual : MonoBehaviour
             if (name.EndsWith("LeftFoot") || name.EndsWith("RightFoot") ||
                 name.EndsWith("LeftToeBase") || name.EndsWith("RightToeBase") ||
                 name.EndsWith("LeftToe_End") || name.EndsWith("RightToe_End")) feet.Add(child);
+            if (name.EndsWith(":Hips") || name == "Hips") hips = child;
         }
         model.transform.localPosition = Vector3.zero;
-        model.transform.localRotation = Quaternion.identity;
-        model.transform.localScale = Vector3.one;
+        model.transform.localRotation = source.transform.localRotation;
+        model.transform.localScale = source.transform.localScale;
         renderers = model.GetComponentsInChildren<Renderer>(true);
         foreach (Renderer renderer in renderers)
         {
@@ -128,13 +136,31 @@ public sealed class DwarfModelVisual : MonoBehaviour
             for (int i = 0; i < slots.Length; i++) slots[i] = runtimeMaterial;
             renderer.sharedMaterials = slots;
         }
-        skins = model.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-        snapshots = new Mesh[skins.Length];
-        for (int i = 0; i < skins.Length; i++)
+        foreach (SkinnedMeshRenderer skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
         {
-            snapshots[i] = new Mesh { name = "Dwarf Pose Contact", hideFlags = HideFlags.DontSave };
-            skins[i].updateWhenOffscreen = true;
+            skin.enabled = true;
+            skin.forceRenderingOff = false;
+            skin.updateWhenOffscreen = true;
         }
+        // Use the source mesh bounds before playing any animation. These are
+        // stable and do not depend on culling or BakeMesh scale conventions.
+        if (!TrySourceBounds(out Bounds bounds) || bounds.size.y < 0.000001f)
+        { ReleaseVisual(); return; }
+        model.transform.localScale *= visualHeight / bounds.size.y;
+        if (!TrySourceBounds(out bounds)) { ReleaseVisual(); return; }
+        model.transform.position += new Vector3(anchor.position.x - bounds.center.x,
+            FloorY - bounds.min.y, anchor.position.z - bounds.center.z);
+        fittedLocalPosition = model.transform.localPosition;
+        if (feet.Count > 0)
+            soleOffset = Mathf.Clamp(LowestFootBone() - FloorY,
+                0f, visualHeight * 0.15f);
+        if (hips != null) hipsRestPosition = hips.localPosition;
+        Transform old = transform.Find("Capsule_Placeholder");
+        placeholder = old != null ? old.GetComponent<Renderer>() : null;
+        if (placeholder != null) placeholder.enabled = false;
+        // A missing run clip must not make a successfully imported model disappear.
+        if (clip == null || clip.length <= 0f)
+        { Debug.LogWarning("Dwarf model is visible but its run clip needs reimporting.", this); return; }
         Animator animator = model.GetComponent<Animator>();
         if (animator == null) animator = model.AddComponent<Animator>();
         animator.applyRootMotion = false;
@@ -149,19 +175,6 @@ public sealed class DwarfModelVisual : MonoBehaviour
         clipTime = 0f;
         graph.Play();
         graph.Evaluate(0f);
-        // Measure after evaluating the animation, never from imported/T-pose bounds.
-        if (!TryPoseBounds(out Bounds bounds) || bounds.size.y < 0.001f)
-        { ReleaseVisual(); return; }
-        model.transform.localScale *= visualHeight / bounds.size.y;
-        if (!TryPoseBounds(out bounds)) { ReleaseVisual(); return; }
-        model.transform.position += new Vector3(anchor.position.x - bounds.center.x,
-            FloorY - bounds.min.y, anchor.position.z - bounds.center.z);
-        fittedLocalPosition = model.transform.localPosition;
-        if (feet.Count > 0) soleOffset = LowestFootBone() - FloorY;
-        nextPoseSample = Time.time + 0.12f + (Mathf.Abs(GetInstanceID() % 7) * 0.02f);
-        Transform old = transform.Find("Capsule_Placeholder");
-        placeholder = old != null ? old.GetComponent<Renderer>() : null;
-        if (placeholder != null) placeholder.enabled = false;
     }
 
     private float LowestFootBone()
@@ -171,30 +184,27 @@ public sealed class DwarfModelVisual : MonoBehaviour
         return y;
     }
 
-    private bool TryPoseBounds(out Bounds bounds)
+    private bool TrySourceBounds(out Bounds bounds)
     {
         bounds = default;
         bool found = false;
-        for (int i = 0; skins != null && i < skins.Length; i++)
+        foreach (Renderer renderer in renderers)
         {
-            if (skins[i] == null || skins[i].sharedMesh == null) continue;
-            skins[i].BakeMesh(snapshots[i], false);
-            vertices.Clear();
-            snapshots[i].GetVertices(vertices);
-            foreach (Vector3 vertex in vertices)
+            Mesh mesh = null;
+            if (renderer is SkinnedMeshRenderer skin) mesh = skin.sharedMesh;
+            else if (renderer.TryGetComponent(out MeshFilter filter)) mesh = filter.sharedMesh;
+            if (mesh == null) continue;
+            Bounds local = mesh.bounds;
+            for (int corner = 0; corner < 8; corner++)
             {
-                Vector3 point = skins[i].transform.TransformPoint(vertex);
+                Vector3 offset = new Vector3((corner & 1) == 0 ? -local.extents.x : local.extents.x,
+                    (corner & 2) == 0 ? -local.extents.y : local.extents.y,
+                    (corner & 4) == 0 ? -local.extents.z : local.extents.z);
+                Vector3 point = renderer.transform.TransformPoint(local.center + offset);
                 if (!found) { bounds = new Bounds(point, Vector3.zero); found = true; }
                 else bounds.Encapsulate(point);
             }
         }
-        if (!found && renderers != null)
-            foreach (Renderer renderer in renderers)
-            {
-                if (renderer == null) continue;
-                if (!found) { bounds = renderer.bounds; found = true; }
-                else bounds.Encapsulate(renderer.bounds);
-            }
         return found;
     }
 
@@ -214,12 +224,10 @@ public sealed class DwarfModelVisual : MonoBehaviour
         if (graph.IsValid()) graph.Destroy();
         if (placeholder != null) placeholder.enabled = true;
         RemoveObject(model);
-        if (snapshots != null) foreach (Mesh mesh in snapshots) RemoveObject(mesh);
         RemoveObject(runtimeMaterial);
         model = null;
         runtimeMaterial = null;
-        snapshots = null;
-        skins = null;
+        hips = null;
         renderers = null;
         feet.Clear();
     }

@@ -22,8 +22,8 @@ Sahne bağlantıları ve zıplama mesafeleri sayısal olarak kontrol edilir; Uni
 
 ## Balta ve görünürlük düzeltmesi
 
-- Yedi cücenin sahnede kaydedilen boyu 1.8 birimdir. Koşu pozu ilk ölçümden önce değerlendirilir; gerçek skinned mesh tabanı ölçülür ve ayak/ayak parmağı kemikleri takip edilir.
-- Her kare kayıtlı yerel başlangıç konumundan hizalanır; kamera dışında eski renderer bounds değerleriyle biriken dikey kaydırma kaldırılmıştır. Görseller kamera dışında da güncellenir.
+- Yedi cücenin sahnede kaydedilen boyu 1.8 birimdir. Boyut animasyon başlamadan önce kaynak mesh sınırlarının sekiz köşesinden ölçülür; kamera ve BakeMesh ölçek davranışından bağımsızdır. Ayak/ayak parmağı kemikleri taban hizalamasını sağlar.
+- Her kare kayıtlı yerel başlangıç konumundan hizalanır; kamera dışında eski renderer bounds değerleriyle biriken dikey kaydırma kaldırılmıştır. Görseller kamera dışında da güncellenir. Kalça kemiğinin yatay animasyon hareketi sabitlenir; görseli takip noktasından uzaklaştıramaz. Koşu klibi eksikse içe aktarılan model görünür kalır ve onarım uyarısı gösterilir.
 - Baltalar cücenin baktığı X yönünde yerden 0.4 birim yüksekte, 7.5 birim/saniye hızla düz gider. Oyuncunun konumu, hızı veya zıplaması hedef hesabına girmez. İlk atış 4 saniye sonra, devamı 3.5–4.5 saniye aralıklarla yapılır.
 - Hasar yarıçapı 0.22 birimdir. Eski 0.62 birimlik yakınlık hasarı kaldırıldı. Fizik adımları arasındaki geçiş küçük bir kapsülle taranır; üstünden atlanan baltalar hasar vermez.
 - Başlangıca dönüşte eski baltalar temizlenir ve atış süresi sıfırlanır. Giriş videosunda, açıklama okurken ve sahne geçişinde hasar verilmez.
