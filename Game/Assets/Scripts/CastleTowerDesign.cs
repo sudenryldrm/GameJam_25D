@@ -193,13 +193,6 @@ public static class CastleTowerDesign
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
         }
-        foreach (Light light in Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
-            if (light.gameObject.scene == sceneRoot.gameObject.scene && light.type == LightType.Directional)
-            { light.color = new Color(1, .96f, .9f); light.intensity = 1.35f; light.shadows = LightShadows.Soft; }
-        RenderSettings.ambientMode = AmbientMode.Trilight;
-        RenderSettings.ambientSkyColor = new Color(.43f, .49f, .62f);
-        RenderSettings.ambientEquatorColor = new Color(.4f, .36f, .32f);
-        RenderSettings.ambientGroundColor = new Color(.22f, .24f, .3f);
         Debug.Log("Castle rebuilt: " + batches.Count + " merged decoration batches; 96 marble treads; no ivy or decorative shadow casters.");
     }
 

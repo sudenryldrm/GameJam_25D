@@ -57,6 +57,8 @@ public sealed class SceneArtFinisher : MonoBehaviour
     public void Build()
     {
         if (!this) return;
+        if (gameObject.scene.name == "Scene3_TowerEscape")
+            (GetComponent<CastleInteriorLighting>() ?? gameObject.AddComponent<CastleInteriorLighting>()).Apply();
         Transform existing = transform.Find(Root);
         if (existing && (gameObject.scene.name != "Scene3_TowerEscape" || existing.Find("Castle_Art_v4"))) return;
         if (existing) { if (Application.isPlaying) Destroy(existing.gameObject); else DestroyImmediate(existing.gameObject); }
