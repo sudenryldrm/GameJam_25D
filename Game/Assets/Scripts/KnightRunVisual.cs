@@ -6,63 +6,64 @@ using UnityEngine.Playables;
 public sealed class KnightRunVisual : MonoBehaviour
 {
     [SerializeField] private AnimationClip runClip;
-    [SerializeField] private float groundOffset = -0.02f;
     private PlayableGraph graph;
-    private AnimationClipPlayable playable;
-    private float clipTime;
-    private Vector3 lastParentPos;
-    private Transform parentRoot;
+    private AnimationClipPlayable run;
+    private Transform hips;
+    private Vector3 restHips, restPosition, previousPosition;
+    private Quaternion restRotation;
+    private float time, duration;
 
-    public void SetClip(AnimationClip clip) => runClip = clip;
-
-    private void Start()
+    private void OnEnable()
     {
-        parentRoot = transform.parent != null ? transform.parent : transform;
-        lastParentPos = parentRoot.position;
-        if (runClip == null) return;
-        Animator animator = GetComponent<Animator>();
-        if (animator == null) animator = gameObject.AddComponent<Animator>();
-        animator.applyRootMotion = false;
-        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-        foreach (var smr in GetComponentsInChildren<SkinnedMeshRenderer>(true))
-            smr.updateWhenOffscreen = true;
-
-        graph = PlayableGraph.Create("KnightDrunkRun");
-        graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
-        var output = AnimationPlayableOutput.Create(graph, "Run", animator);
-        playable = AnimationClipPlayable.Create(graph, runClip);
-        playable.SetApplyFootIK(false);
-        playable.SetSpeed(0d);
-        output.SetSourcePlayable(playable);
-        graph.Play();
-        graph.Evaluate(0f);
+        if (!Application.isPlaying) return;
+        PlayRun();
     }
 
-    private void Update()
+    public void SetClip(AnimationClip clip)
     {
-        if (!graph.IsValid() || !playable.IsValid() || runClip == null) return;
-        bool moving = (parentRoot.position - lastParentPos).sqrMagnitude > 0.00001f;
-        lastParentPos = parentRoot.position;
-        if (moving && runClip.length > 0.01f)
-            clipTime = (clipTime + Time.deltaTime * 1.15f) % runClip.length;
-        playable.SetTime(clipTime);
-        graph.Evaluate(0f);
+        runClip = clip;
+        if (Application.isPlaying && isActiveAndEnabled) PlayRun();
+    }
+
+    private void PlayRun()
+    {
+        if (graph.IsValid()) graph.Destroy();
+        time = 0f;
+        AnimationClip clip = runClip;
+        if (!clip)
+            foreach (var candidate in Resources.LoadAll<AnimationClip>("SceneArt/Knight"))
+                if (!candidate.name.StartsWith("__preview__") && candidate.length > 0) { clip = candidate; break; }
+        if (!clip) { Debug.LogError("Knight FBX contains no imported run animation.", this); return; }
+        Animator animator = GetComponentInChildren<Animator>();
+        if (!animator) animator = gameObject.AddComponent<Animator>();
+        animator.applyRootMotion = false;
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        foreach (Transform bone in GetComponentsInChildren<Transform>())
+            if (bone.name == "Hips" || bone.name.EndsWith(":Hips")) { hips = bone; restHips = bone.localPosition; break; }
+        restPosition = transform.localPosition;
+        restRotation = transform.localRotation;
+        previousPosition = transform.parent.position;
+        duration = clip.length;
+        graph = PlayableGraph.Create("Knight Run");
+        graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+        run = AnimationClipPlayable.Create(graph, clip);
+        AnimationPlayableOutput.Create(graph, "Run", animator).SetSourcePlayable(run);
+        graph.Play();
     }
 
     private void LateUpdate()
     {
-        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-        if (renderers.Length == 0) return;
-        float lowest = float.PositiveInfinity;
-        foreach (var r in renderers)
-            if (r.enabled) lowest = Mathf.Min(lowest, r.bounds.min.y);
-        if (float.IsInfinity(lowest)) return;
-        float feetY = parentRoot.position.y - 0.9f + groundOffset;
-        transform.position += new Vector3(0f, feetY - lowest, 0f);
+        if (!graph.IsValid()) return;
+        Vector3 current = transform.parent.position;
+        bool moving = (current - previousPosition).sqrMagnitude > .000001f;
+        previousPosition = current;
+        if (moving && Time.deltaTime > 0) time = (time + Time.deltaTime) % duration;
+        run.SetTime(time);
+        graph.Evaluate(0);
+        transform.localPosition = restPosition;
+        transform.localRotation = restRotation;
+        if (hips) hips.localPosition = new Vector3(restHips.x, hips.localPosition.y, restHips.z);
     }
 
-    private void OnDestroy()
-    {
-        if (graph.IsValid()) graph.Destroy();
-    }
+    private void OnDisable() { if (graph.IsValid()) graph.Destroy(); }
 }

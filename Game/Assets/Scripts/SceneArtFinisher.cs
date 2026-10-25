@@ -50,22 +50,23 @@ public sealed class SceneArtFinisher : MonoBehaviour
         else DestroyImmediate(go.GetComponent<Collider>());
         Renderer r = go.GetComponent<Renderer>();
         r.sharedMaterial = material;
-        var block = new MaterialPropertyBlock();
-        block.SetColor("_BaseColor", tint);
-        r.SetPropertyBlock(block);
+
         return go;
     }
 
-    private void Build()
+    public void Build()
     {
-        if (!this || transform.Find(Root)) return;
+        if (!this) return;
+        Transform existing = transform.Find(Root);
+        if (existing && (gameObject.scene.name != "Scene3_TowerEscape" || existing.Find("Castle_Art_v2"))) return;
+        if (existing) { if (Application.isPlaying) Destroy(existing.gameObject); else DestroyImmediate(existing.gameObject); }
         bool tower = gameObject.scene.name == "Scene3_TowerEscape";
         if (!tower && gameObject.scene.name != "Scene2_WitchChase") return;
         GameObject primary = Model(tower ? "Knight" : "Bridge");
         if (!primary) return;
         Transform art = new GameObject(Root).transform;
         art.SetParent(transform, false);
-        if (tower) BuildTower(art, primary);
+        if (tower) { new GameObject("Castle_Art_v2").transform.SetParent(art, false); BuildTower(art, primary); }
         else BuildForest(art, primary);
     }
 
@@ -99,11 +100,21 @@ public sealed class SceneArtFinisher : MonoBehaviour
             Transform anchor = prince.Find("Prince_ArtAnchor");
             if (anchor)
             {
-                Place(knight, anchor, "Knight_Visual", prince.position, new Vector3(1.1f, 1.8f, .9f));
+                Transform previous = anchor.Find("Knight_Visual");
+                if (previous) { previous.gameObject.SetActive(false); if (Application.isPlaying) Destroy(previous.gameObject); else DestroyImmediate(previous.gameObject); }
+                GameObject visual = Instantiate(knight, anchor, false);
+                visual.name = "Knight_Visual";
+                Bounds bounds = BoundsOf(visual);
+                visual.transform.localScale *= 2.5f / Mathf.Max(bounds.size.y, .001f);
+                bounds = BoundsOf(visual);
+                visual.transform.position += new Vector3(prince.position.x - bounds.center.x, prince.position.y - .9f - bounds.min.y, prince.position.z - bounds.center.z);
+                foreach (Collider collider in visual.GetComponentsInChildren<Collider>()) collider.enabled = false;
+                visual.AddComponent<KnightRunVisual>();
                 Renderer capsule = prince.GetComponent<Renderer>();
                 if (capsule) capsule.enabled = false;
             }
         }
+        Material marble = Resources.Load<Material>("SceneArt/Castle_Marble");
         GameObject stair = Model("StairStep");
         GameObject ivy = Model("Ivy");
         int index = 0;
@@ -119,7 +130,11 @@ public sealed class SceneArtFinisher : MonoBehaviour
                 Bounds b = r.bounds;
                 if (stair)
                 {
-                    Place(stair, step, "Stone_Step_Visual", b.center, b.size);
+                    Transform oldStep = step.Find("Stone_Step_Visual");
+                    if (oldStep) { oldStep.gameObject.SetActive(false); if (Application.isPlaying) Destroy(oldStep.gameObject); else DestroyImmediate(oldStep.gameObject); }
+                    GameObject stoneStep = Place(stair, step, "Stone_Step_Visual", b.center, b.size);
+                    if (marble) foreach (Renderer surface in stoneStep.GetComponentsInChildren<Renderer>())
+                    { var slots = surface.sharedMaterials; for (int s = 0; s < slots.Length; s++) slots[s] = marble; surface.sharedMaterials = slots; }
                     r.enabled = false;
                 }
                 if (ivy && index++ % 7 == 2)
@@ -129,7 +144,21 @@ public sealed class SceneArtFinisher : MonoBehaviour
         }
 
         Renderer backdrop = transform.Find("Backdrop")?.GetComponent<Renderer>();
-        Material stone = backdrop ? backdrop.sharedMaterial : null;
+        Material stone = Resources.Load<Material>("SceneArt/Castle_Wall");
+        if (!stone && backdrop) stone = backdrop.sharedMaterial;
+        if (backdrop && stone) backdrop.sharedMaterial = stone;
+        foreach (Transform child in transform)
+            if (stone && child.name.Contains("Wall"))
+            { Renderer surface = child.GetComponent<Renderer>(); if (surface) surface.sharedMaterial = stone; }
+        for (int column = -1; column <= 1; column += 2)
+        {
+            Box(art, "Castle_Pilaster", new Vector3(column * 10.7f, 21, 3.75f), new Vector3(.7f, 44, .8f), stone, Color.gray);
+            for (int tier = 0; tier < 7; tier++)
+                Box(art, "Castle_Cornice", new Vector3(column * 10.7f, tier * 6.5f + .3f, 3.5f), new Vector3(1.2f, .3f, 1.1f), marble, Color.gray);
+        }
+        foreach (Transform child in transform)
+            if (marble && (child.name.Contains("Landing") || child.name.Contains("Floor")))
+            { Renderer surface = child.GetComponent<Renderer>(); if (surface) surface.sharedMaterial = marble; }
         for (int y = 0; y < 22; y++)
             for (int x = 0; x < 10; x++)
             {
@@ -138,7 +167,7 @@ public sealed class SceneArtFinisher : MonoBehaviour
                 if (px > 11.7f) continue;
                 float shade = .27f + ((x * 11 + y * 7) % 5) * .018f;
                 Box(art, "Wall_Stone", new Vector3(px, y * 2 + 1, 4.15f),
-                    new Vector3(2.33f, 1.92f, .22f), stone, new Color(shade, shade * .95f, shade * .89f));
+                    new Vector3(2.33f, 1.92f, .38f), stone, new Color(shade + .2f, shade + .2f, shade + .2f));
             }
     }
 }
