@@ -93,7 +93,7 @@ public sealed class LevelIntroCutscene : MonoBehaviour
     {
         if (!running) return;
         dialogueStarted = true;
-        if (gameObject.scene.name == "SampleScene") FirstLevelMusic.Conversation();
+        FirstLevelMusic.Conversation();
         if (cameraFollow) cameraFollow.BeginConversationShot((player.transform.position + stagedBossPosition) * .5f);
         beganAt = Time.unscaledTime; lineBeganAt = beganAt + .75f;
         line = 0; reactionLine = -1; exiting = false; revealAll = false;
@@ -226,7 +226,7 @@ public sealed class LevelIntroCutscene : MonoBehaviour
         else if (director) { director.stopped -= OnStopped; director.Stop(); }
         Time.timeScale = previousTimeScale;
         if (player) player.isInteracting = previousInteraction;
-        if (gameObject.scene.name == "SampleScene" && isActiveAndEnabled) FirstLevelMusic.Chase();
+        if (isActiveAndEnabled) FirstLevelMusic.Chase();
     }
 
     private void OnDisable() { Finish(); }

@@ -27,6 +27,8 @@ public sealed class StorybookCoverScreen : MonoBehaviour
         if (visible) return;
         artwork = Resources.Load<Texture2D>(final ? "UI/Ending" : "UI/StartCover");
         if (!artwork) { Debug.LogError("Storybook cover artwork is missing."); begin?.Invoke(); return; }
+        FirstLevelMusic.Stop();
+        FirstLevelMusic.Cover(true);
         ending = final; onStart = begin; screenAge = 0; closeAt = -1; loading = false;
         player = FindFirstObjectByType<PlayerController25D>();
         previousTimeScale = Time.timeScale;
@@ -58,11 +60,11 @@ public sealed class StorybookCoverScreen : MonoBehaviour
         // Keep the opening visible even when first-use asset loading stalls a frame.
         screenAge += Mathf.Min(Time.unscaledDeltaTime, .1f);
         float age = screenAge;
-        if (ending && age >= EndingHold && closeAt < 0) { closeAt = age; StorySfx.Play("BookClose", .7f); }
+        if (ending && age >= EndingHold && closeAt < 0) { closeAt = age; FirstLevelMusic.Cover(false); StorySfx.Play("BookClose", .7f); }
         if (!ending && closeAt < 0 && age > OpenDuration + .25f && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             Vector2 mouse = Mouse.current.position.ReadValue(); mouse.y = Screen.height - mouse.y;
-            if (OverPortrait(mouse, BookRect())) { closeAt = age; StorySfx.Play("Click", .32f); StorySfx.Play("BookClose", .65f); }
+            if (OverPortrait(mouse, BookRect())) { closeAt = age; FirstLevelMusic.Cover(false); StorySfx.Play("Click", .32f); StorySfx.Play("BookClose", .65f); }
         }
         if (closeAt < 0 || age - closeAt < CloseDuration + (ending ? .8f : 0)) return;
         if (ending)
@@ -85,6 +87,7 @@ public sealed class StorybookCoverScreen : MonoBehaviour
     {
         if (!visible) return;
         visible = false; IsShowing = false;
+        FirstLevelMusic.Cover(false);
         Time.timeScale = previousTimeScale;
         if (player) player.isInteracting = previousInteraction;
     }

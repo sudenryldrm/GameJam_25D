@@ -38,8 +38,8 @@ public sealed class StorySfx : MonoBehaviour
     public static void Play(string id, float volume = .5f, bool menu = true, float pitch = 1)
     {
         if (!instance || (!menu && Time.timeScale <= 0)) return;
-        if (id == "BookOpen") id = "BookWhooshOpen";
-        else if (id == "BookClose") id = "BookWhooshClose";
+        if (id == "BookOpen") id = "BookMotion";
+        else if (id == "BookClose") id = "BookMotion";
         if (!instance.clips.TryGetValue(id, out AudioClip clip)) return;
         float now = Time.unscaledTime;
         float cooldown = id == "Hurt" ? .35f : .07f;
