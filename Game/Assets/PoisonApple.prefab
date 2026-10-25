@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3589085771010123940}
   - component: {fileID: 6549838513254410011}
   - component: {fileID: 1749806499644192408}
+  - component: {fileID: 4200000000}
   m_Layer: 0
   m_Name: PoisonApple
   m_TagString: Untagged
@@ -33,7 +34,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.4, y: 0.4, z: 0.4}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 4200000002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7284545837956704666
@@ -154,3 +156,88 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PoisonApple
   lifeTime: 8
+--- !u!114 &4200000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1926263129225701512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cae2d876c4087438784e9d7a96e6d9a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ItemAppleVisual
+  model: {fileID: 4200000002}
+  placeholders:
+  - {fileID: 2619392949518990822}
+  bodyMaterial: {fileID: 2100000, guid: a223e1b04d082f1e51070d53c3d5253b, type: 2}
+  stemMaterial: {fileID: 2100000, guid: c4c3d565b8d6b1a477f5e8f3d4ac1c39, type: 2}
+  height: 0.4
+  bottomOffset: -0.2
+  bobAmplitude: 0
+  bobFrequency: 0
+  tiltDegrees: 0
+
+--- !u!1001 &4200000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 6092145212855779033}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+      propertyPath: m_Name
+      value: Poison_Apple_Visual
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+--- !u!4 &4200000002 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f1a1218e6b34eca088e3b18d05f18555, type: 3}
+  m_PrefabInstance: {fileID: 4200000001}
+  m_PrefabAsset: {fileID: 0}
