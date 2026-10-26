@@ -117,7 +117,7 @@ public static class StorybookUI
     }
 
     public static bool CloseButton(Rect rect)
-    { Prepare(); return GUI.Button(rect, "×", button); }
+    { Prepare(); bool clicked = GUI.Button(rect, "×", button); if (clicked) StorySfx.Play("Click", .7f); return clicked; }
 
     public static bool Conversation(string speaker, string text, int line, int total)
     {

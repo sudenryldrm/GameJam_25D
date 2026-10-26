@@ -54,9 +54,10 @@ public sealed class FirstLevelMusic : MonoBehaviour
     {
         // Keep dialogue audible while its cutscene pauses physics; soften chase music while reading journals.
         float duck = mode == 2 && Time.timeScale <= 0 ? .55f : 1;
-        Fade(conversation, mode == 1 ? Volume * .70f : 0);
-        Fade(chase, mode == 2 ? Volume * .88f * duck : 0);
-        float coverTarget = coverPlaying ? Volume * .88f : 0;
+        float feedbackDuck = StorySfx.MusicDuck;
+        Fade(conversation, mode == 1 ? Volume * .70f * feedbackDuck : 0);
+        Fade(chase, mode == 2 ? Volume * .88f * duck * feedbackDuck : 0);
+        float coverTarget = coverPlaying ? Volume * .88f * feedbackDuck : 0;
         cover.volume = Mathf.MoveTowards(cover.volume, coverTarget, Time.unscaledDeltaTime * .62f);
         if (!coverPlaying && cover.volume <= .0001f && cover.isPlaying) cover.Stop();
     }

@@ -17,3 +17,5 @@ Seslerin listesi mapping.json içindedir. Ortam döngüsü bu pakete dahil deği
 - cicifyre, Female RPG Voice Starter Pack (CC0): https://opengameart.org/content/female-rpg-voice-starter-pack — Type 2 jump1/2, damaged1; sessizlik kesildi ve seviyeler dengelendi.
 - cicifyre, Voice Clip Packs for Visual Novels and RPGs (CC0): https://opengameart.org/content/voice-clip-packs-for-visual-novels-and-rpgs — Bright Female 01-anime gasp ve 01-laughter; kısa kesitler.
 - BookWhooshOpen/Close: Kenney RPG Audio knifeSlice2 kaydından uzatma, yumuşatma ve ters çevirme ile uyarlandı.
+
+Tıklama sesi click_001.ogg ile güncellendi. SFX kayıtları oyun başında RMS seviyesine göre dengelenir; yumuşak tepe sınırlaması uygulanır. Kullanıcıya ait yeni start_ve_ending_loop.wav, CoverLoop olarak yerleştirildi.
