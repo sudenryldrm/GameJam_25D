@@ -89,7 +89,7 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
             return;
         }
         preview = Instantiate(prefabs[shot], new Vector3(Offset, 0, 0), Quaternion.identity);
-        if (shot < 2) OpeningForestScenery.Build(preview, shot == 1);
+        if (shot < 2) { ForestWind.ApplyHierarchy(preview); OpeningForestScenery.Build(preview, shot == 1); }
         MapPreviewInfo info = preview.GetComponent<MapPreviewInfo>();
         Light sun = sunObject.GetComponent<Light>();
         sun.color = shot == 0 ? new Color(1f, 211f / 255f, 144f / 255f) : info.sunlight;

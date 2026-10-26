@@ -10,8 +10,9 @@ public sealed class OpeningForestScenery : MonoBehaviour
     {
         public readonly List<Vector3> vertices = new List<Vector3>();
         public readonly List<int> indices = new List<int>();
-        public void Triangle(Vector3 a, Vector3 b, Vector3 c)
-        { int i = vertices.Count; vertices.Add(a); vertices.Add(b); vertices.Add(c); indices.Add(i); indices.Add(i + 1); indices.Add(i + 2); }
+        public readonly List<Vector2> weights = new List<Vector2>();
+        public void Triangle(Vector3 a, Vector3 b, Vector3 c, float wa = 0, float wb = 0, float wc = 0)
+        { int i = vertices.Count; vertices.Add(a); vertices.Add(b); vertices.Add(c); indices.Add(i); indices.Add(i + 1); indices.Add(i + 2); weights.Add(new Vector2(wa, 0)); weights.Add(new Vector2(wb, 0)); weights.Add(new Vector2(wc, 0)); }
     }
 
     public static void Build(GameObject preview, bool haunted)
@@ -68,7 +69,7 @@ public sealed class OpeningForestScenery : MonoBehaviour
             float a = rotation + i * Mathf.PI * 2 / sides, b = rotation + (i + 1) * Mathf.PI * 2 / sides;
             Vector3 p = root + new Vector3(Mathf.Cos(a) * radius, 0, Mathf.Sin(a) * radius);
             Vector3 q = root + new Vector3(Mathf.Cos(b) * radius, 0, Mathf.Sin(b) * radius);
-            batch.Triangle(p, root + Vector3.up * height, q);
+            batch.Triangle(p, root + Vector3.up * height, q, 0, 1, 0);
         }
     }
 
@@ -87,10 +88,14 @@ public sealed class OpeningForestScenery : MonoBehaviour
     {
         var mesh = new Mesh { name = label };
         if (batch.vertices.Count > 65535) mesh.indexFormat = IndexFormat.UInt32;
-        mesh.SetVertices(batch.vertices); mesh.SetTriangles(batch.indices, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
-        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        mesh.SetVertices(batch.vertices); mesh.SetUVs(1, batch.weights); mesh.SetTriangles(batch.indices, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
+        bool canopy = label.Contains("canopy");
+        if (canopy) { Bounds bounds = mesh.bounds; bounds.Expand(new Vector3(.5f, 0, .5f)); mesh.bounds = bounds; }
+        Shader shader = canopy && ForestWind.FoliageShader ? ForestWind.FoliageShader : Shader.Find("Universal Render Pipeline/Lit");
         var material = new Material(shader) { name = label + " material" };
-        material.SetColor("_BaseColor", color); material.SetFloat("_Smoothness", .08f);
+        material.SetColor("_BaseColor", color);
+        if (canopy) { material.SetFloat("_UseVertexWeights", 1); material.SetFloat("_WindStrength", .13f); }
+        else material.SetFloat("_Smoothness", .08f);
         var piece = new GameObject(label); piece.transform.SetParent(transform, false);
         piece.AddComponent<MeshFilter>().sharedMesh = mesh;
         var renderer = piece.AddComponent<MeshRenderer>(); renderer.sharedMaterial = material;

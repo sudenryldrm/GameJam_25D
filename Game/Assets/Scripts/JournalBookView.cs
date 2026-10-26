@@ -29,7 +29,8 @@ public sealed class JournalBookView
         if (!target || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame) return false;
         Camera camera = Camera.main;
         if (!camera) return false;
-        Vector3 point = camera.WorldToScreenPoint(target.position);
+        ItemAppleVisual apple = target.GetComponent<ItemAppleVisual>();
+        Vector3 point = camera.WorldToScreenPoint(apple ? apple.InteractionPoint : target.position);
         if (point.z <= 0) return false;
         float radius = camera.orthographic ? Screen.height / (camera.orthographicSize * 2) * .9f : 45;
         return Vector2.Distance(Mouse.current.position.ReadValue(), point) <= Mathf.Clamp(radius, 28, 80);

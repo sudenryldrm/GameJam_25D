@@ -109,6 +109,7 @@ public sealed class ForestLevelArt : MonoBehaviour
             float anchorY = item.kind == ArtKind.Platform ? bounds.max.y : bounds.min.y;
             model.position += new Vector3(item.surfaceCenter.x - bounds.center.x,
                 item.surfaceCenter.y - anchorY, item.surfaceCenter.z - bounds.center.z);
+            if (item.kind == ArtKind.Pine) foreach (MeshRenderer leaf in renderers) if (leaf.name.StartsWith("TreeLeaves")) ForestWind.Apply(leaf);
         }
         return complete;
     }
