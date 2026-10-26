@@ -58,8 +58,9 @@ public sealed class ForestAtmosphere : MonoBehaviour
         Color mist = Blend(new Color(.49f,.53f,.4f), new Color(.29f,.39f,.43f), new Color(.2f,.24f,.34f));
         if (sun)
         {
-            sun.color = Blend(new Color(1,.85f,.65f), new Color(.8f,.9f,1), new Color(.68f,.76f,1));
-            sun.intensity = Mathf.Lerp(1.65f, 1.15f, t);
+            sun.color = WitchForest ? Blend(new Color(1,.85f,.65f), new Color(.8f,.9f,1), new Color(.68f,.76f,1))
+                : new Color(1f, 211f / 255f, 144f / 255f);
+            sun.intensity = WitchForest ? Mathf.Lerp(1.65f, 1.15f, t) : 1.5625f;
             sun.useColorTemperature = false;
             sun.transform.rotation = Quaternion.Euler(38, -32, 0);
             sun.shadows = LightShadows.Soft; sun.shadowStrength = Mathf.Lerp(.55f,.45f,t);

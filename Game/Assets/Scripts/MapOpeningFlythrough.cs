@@ -35,7 +35,7 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
     private readonly List<Renderer> hiddenPlayer = new List<Renderer>();
     private Transform player;
     private static readonly Vector3[][] Routes = {
-        new[] { new Vector3(-44,2.15f,-4), new Vector3(-40,2.15f,-3.7f), new Vector3(-36,2.15f,-3.5f), new Vector3(-31,2.15f,-3.8f), new Vector3(-27,2.15f,-4) },
+        new[] { new Vector3(-44,2.15f,-4), new Vector3(-40,1.95f,-6), new Vector3(-36,1.55f,-8), new Vector3(-31,1.35f,-8.5f), new Vector3(-27,1.35f,-8.5f) },
         new[] { new Vector3(13.8f,6.4f,-1.8f), new Vector3(15.5f,5.5f,-1.8f), new Vector3(18,2.6f,-1.8f), new Vector3(21.5f,2.15f,-1.8f), new Vector3(25.5f,2.15f,-1.8f) },
         new[] { new Vector3(-8.5f,2.15f,-.4f), new Vector3(-5,3,-.4f), new Vector3(-1.5f,3.85f,-.4f), new Vector3(2,4.68f,-.4f), new Vector3(5.5f,5.5f,-.4f) }
     };
@@ -89,9 +89,12 @@ public sealed class MapOpeningFlythrough : MonoBehaviour
             return;
         }
         preview = Instantiate(prefabs[shot], new Vector3(Offset, 0, 0), Quaternion.identity);
+        if (shot < 2) OpeningForestScenery.Build(preview, shot == 1);
         MapPreviewInfo info = preview.GetComponent<MapPreviewInfo>();
         Light sun = sunObject.GetComponent<Light>();
-        sun.color = info.sunlight; sun.intensity = info.intensity;
+        sun.color = shot == 0 ? new Color(1f, 211f / 255f, 144f / 255f) : info.sunlight;
+        sun.intensity = shot == 0 ? 1.5625f : info.intensity;
+        sun.useColorTemperature = false;
         RenderSettings.ambientMode = AmbientMode.Trilight;
         RenderSettings.ambientSkyColor = info.sky;
         RenderSettings.ambientEquatorColor = info.ambient;

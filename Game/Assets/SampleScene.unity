@@ -14,19 +14,19 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_FogMode: 3
+  m_Fog: 1
+  m_FogColor: {r: 0.42000002, g: 0.48099998, b: 0.41050002, a: 1}
+  m_FogMode: 1
   m_FogDensity: 0.01
-  m_LinearFogStart: 0
-  m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.34, g: 0.36, b: 0.38, a: 1}
-  m_AmbientEquatorColor: {r: 0.25, g: 0.27, b: 0.3, a: 1}
-  m_AmbientGroundColor: {r: 0.15, g: 0.16, b: 0.17, a: 1}
+  m_LinearFogStart: 31.475
+  m_LinearFogEnd: 100.275
+  m_AmbientSkyColor: {r: 0.3985, g: 0.44550002, b: 0.451, a: 1}
+  m_AmbientEquatorColor: {r: 0.299, g: 0.333, b: 0.298, a: 1}
+  m_AmbientGroundColor: {r: 0.16, g: 0.18, b: 0.2, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -35,7 +35,7 @@ RenderSettings:
   m_DefaultReflectionMode: 0
   m_DefaultReflectionResolution: 128
   m_ReflectionBounces: 1
-  m_ReflectionIntensity: 1
+  m_ReflectionIntensity: 0.515
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 410087040}
   m_UseRadianceAmbientProbe: 0
@@ -338,8 +338,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1.7
+  m_Color: {r: 1, g: 0.827451, b: 0.5647059, a: 1}
+  m_Intensity: 1.5625
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -348,10 +348,10 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 0.7
+    m_Strength: 0.5325
     m_Bias: 0.05
-    m_NormalBias: 0.4
-    m_NearPlane: 0.2
+    m_NormalBias: 0.25
+    m_NearPlane: 0.1
     m_CullingMatrixOverride:
       e00: 1
       e01: 0
@@ -383,7 +383,7 @@ Light:
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
   m_ColorTemperature: 5000
-  m_UseColorTemperature: 1
+  m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
@@ -402,9 +402,9 @@ Transform:
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
   m_LocalRotation: {x: 0.31295618, y: -0.26062024, z: 0.08973874, w: 0.9088908}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: 2.0879107, y: 6.078306, z: -3.3413553}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 38, y: -32, z: 0}
@@ -1030,9 +1030,6 @@ MonoBehaviour:
   walkableGround: {fileID: 280651024}
   firstDistance: 2.2
   spacing: 0.95
-  firstAxeDelay: 4
-  minimumAxeInterval: 3.5
-  maximumAxeInterval: 4.5
 --- !u!1 &3400000003
 GameObject:
   m_ObjectHideFlags: 0
@@ -10762,6 +10759,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelIntroCutscene
   director: {fileID: 3800000002}
   playOnStart: 1
+  useStoryDialogue: 1
 --- !u!114 &3800000004 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 880000000000000001, guid: e2ad672d2c6bd894cbf4604c022d19b1, type: 3}
@@ -43884,6 +43882,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 97d215b3c18143eaa5c02e834bd1a529, type: 3}
   m_PrefabInstance: {fileID: 4300000936}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &4700100000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4700100001}
+  - component: {fileID: 4700100002}
+  m_Layer: 0
+  m_Name: Forest_Atmosphere_Controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4700100001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4700100000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4700100002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4700100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45625941164c483bb30df5bf39a99e1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForestAtmosphere
+  routeStart: -35
+  routeEnd: 30
 --- !u!1001 &1945580292384002203
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -44050,47 +44094,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0ebcea417aedcb24681b425ccaae836c, type: 3}
---- !u!1 &4700100000
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4700100001}
-  - component: {fileID: 4700100002}
-  m_Layer: 0
-  m_Name: Forest_Atmosphere_Controller
-  m_TagString: Untagged
-  m_IsActive: 1
---- !u!4 &4700100001
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4700100000}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
---- !u!114 &4700100002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4700100000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45625941164c483bb30df5bf39a99e1b, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::ForestAtmosphere
-  routeStart: -35
-  routeEnd: 30
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

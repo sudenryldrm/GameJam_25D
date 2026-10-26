@@ -97,8 +97,8 @@ public static class OpeningPreviewBaker
                         }
                     }
                     var info = preview.AddComponent<MapPreviewInfo>();
-                    info.sunlight = i == 0 ? new Color(1,.85f,.65f) : new Color(.7f,.8f,1);
-                    info.intensity = i == 0 ? 1.65f : 1.15f;
+                    info.sunlight = i == 0 ? new Color(1f, 211f / 255f, 144f / 255f) : new Color(.7f,.8f,1);
+                    info.intensity = i == 0 ? 1.5625f : 1.15f;
                     info.sky = i == 0 ? new Color(.43f,.47f,.43f) : new Color(.3f,.36f,.49f);
                     info.ambient = i == 0 ? new Color(.32f,.34f,.27f) : new Color(.24f,.28f,.34f);
                     info.mist = i == 0 ? new Color(.49f,.53f,.4f) : new Color(.2f,.25f,.35f);
