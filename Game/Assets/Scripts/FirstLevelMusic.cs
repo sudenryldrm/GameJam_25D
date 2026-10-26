@@ -8,10 +8,10 @@ public sealed class FirstLevelMusic : MonoBehaviour
     private AudioSource conversation, chase, cover;
     private bool coverPlaying;
     private int mode;
-    public static float Volume { get; set; } = .6f;
+    public static float Volume { get; set; } = .9f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetSession() { instance = null; Volume = .6f; }
+    private static void ResetSession() { instance = null; Volume = .9f; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Install()
@@ -53,17 +53,17 @@ public sealed class FirstLevelMusic : MonoBehaviour
     private void Update()
     {
         // Keep dialogue audible while its cutscene pauses physics; soften chase music while reading journals.
-        float duck = mode == 2 && Time.timeScale <= 0 ? .28f : 1;
-        Fade(conversation, mode == 1 ? Volume * .48f : 0);
-        Fade(chase, mode == 2 ? Volume * .58f * duck : 0);
-        float coverTarget = coverPlaying ? Volume * .45f : 0;
-        cover.volume = Mathf.MoveTowards(cover.volume, coverTarget, Time.unscaledDeltaTime * .22f);
+        float duck = mode == 2 && Time.timeScale <= 0 ? .55f : 1;
+        Fade(conversation, mode == 1 ? Volume * .70f : 0);
+        Fade(chase, mode == 2 ? Volume * .88f * duck : 0);
+        float coverTarget = coverPlaying ? Volume * .88f : 0;
+        cover.volume = Mathf.MoveTowards(cover.volume, coverTarget, Time.unscaledDeltaTime * .62f);
         if (!coverPlaying && cover.volume <= .0001f && cover.isPlaying) cover.Stop();
     }
 
     private void Fade(AudioSource source, float target)
     {
-        source.volume = Mathf.MoveTowards(source.volume, target, Time.unscaledDeltaTime * .48f);
+        source.volume = Mathf.MoveTowards(source.volume, target, Time.unscaledDeltaTime * .85f);
         if (target == 0 && source.volume <= .0001f && source.isPlaying) source.Stop();
     }
 
