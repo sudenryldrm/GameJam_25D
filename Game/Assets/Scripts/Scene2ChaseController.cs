@@ -66,7 +66,7 @@ public class Scene2ChaseController : MonoBehaviour
     public void HitPlayer(PlayerController25D victim, string cause = "Zehirlendin!")
     {
         if (victim != player || reading || completed || LevelIntroCutscene.IsPlaying || Time.time < protectedUntil) return;
-        notice = cause + " BaÅŸlangÄ±ca dÃ¶ndÃ¼n.";
+        notice = cause + " Başlangıca döndün.";
         noticeUntil = Time.unscaledTime + 2.5f;
         player.Respawn();
     }
@@ -158,13 +158,13 @@ public class Scene2ChaseController : MonoBehaviour
         if (reading) { journal.Draw(CloseJournal); return; }
         if (player == null || LevelIntroCutscene.IsPlaying) return;
         Matrix4x4 previous = StorybookUI.Begin();
-        StorybookUI.Chapter("II", "CadÄ±nÄ±n OrmanÄ±");
-        StorybookUI.Stats($"Yeniden doÄŸuÅŸ: {restartCount}");
+        StorybookUI.Chapter("II", "Cadının Ormanı");
+        StorybookUI.Stats($"Yeniden doğuş: {restartCount}");
         StorybookUI.Controls();
         if (Time.unscaledTime < noticeUntil) StorybookUI.Notice(notice);
-        else if (Time.time < protectedUntil && !completed) StorybookUI.Notice("KÄ±sa sÃ¼reli korunma aktif. Yola devam et!");
-        if (completed) StorybookUI.Dialog("Orman geride kalÄ±yorâ€¦", "Kulenin kapÄ±sÄ± aÃ§Ä±lÄ±yor. HikÃ¢yenin bir sonraki sayfasÄ± seni bekliyor.");
-        else if (NearFrog) StorybookUI.Prompt("KurbaÄŸanÄ±n ArdÄ±nda Kalan HikÃ¢ye");
+        else if (Time.time < protectedUntil && !completed) StorybookUI.Notice("Kısa süreli korunma aktif. Yola devam et!");
+        if (completed) StorybookUI.Dialog("Orman geride kalıyor…", "Kulenin kapısı açılıyor. Hikâyenin bir sonraki sayfası seni bekliyor.");
+        else if (NearFrog) StorybookUI.Prompt("Kurbağanın Ardında Kalan Hikâye");
         if (transitionFade > 0f)
         {
             Color color = GUI.color;
